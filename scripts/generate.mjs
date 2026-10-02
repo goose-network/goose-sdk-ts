@@ -17,6 +17,7 @@ const SPEC_URL =
   process.env.GOOSE_SPEC_URL ??
   "https://raw.githubusercontent.com/goose-network/goose/main/internal/api/docs/swagger.json";
 const SPEC_LOCAL = process.env.GOOSE_SPEC_LOCAL ?? "";
+const SPEC_REF = process.env.GOOSE_SPEC_REF ?? "main";
 const SPEC_V2 = path.join(root, ".spec", "swagger.json");
 const SPEC_V3 = path.join(root, ".spec", "openapi3.json");
 const OUT = path.join(root, "src", "schema.ts");
@@ -27,16 +28,22 @@ const bin = (name) =>
 async function main() {
   await mkdir(path.dirname(SPEC_V2), { recursive: true });
   let spec;
+  let source;
   if (SPEC_LOCAL) {
     spec = await readFile(SPEC_LOCAL, "utf8");
+    source = SPEC_LOCAL;
   } else {
-    const res = await fetch(SPEC_URL, {
+    const url = SPEC_URL.includes("{ref}")
+      ? SPEC_URL.replaceAll("{ref}", encodeURIComponent(SPEC_REF))
+      : SPEC_URL;
+    const res = await fetch(url, {
       headers: { "User-Agent": "goose-sdk-ts-generator" },
     });
     if (!res.ok) {
-      throw new Error(`fetch spec: ${res.status} ${res.statusText} (${SPEC_URL})`);
+      throw new Error(`fetch spec: ${res.status} ${res.statusText} (${url})`);
     }
     spec = await res.text();
+    source = url;
   }
   await writeFile(SPEC_V2, spec);
 
@@ -58,7 +65,7 @@ async function main() {
     "// GENERATED CODE — DO NOT EDIT BY HAND.\n" +
     "// Regenerate with `npm run generate` from internal/api/docs/swagger.json\n" +
     "// in the goose repo. Source spec: " +
-    (SPEC_LOCAL || SPEC_URL) +
+    source +
     "\n\n";
   await writeFile(OUT, banner + generated);
   console.log(`wrote ${path.relative(root, OUT)}`);

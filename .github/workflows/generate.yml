@@ -2,7 +2,8 @@ name: Generate SDK from OpenAPI spec
 
 # Regenerates src/schema.ts from the goose engine's committed OpenAPI
 # document and opens/updates a pull request with the result. Keeps the SDK
-# in lockstep with the admin API without manual copying.
+# in lockstep with the admin API without manual copying. The spec URL comes
+# from scripts/generate.mjs (raw.githubusercontent.com, ref GOOSE_SPEC_REF).
 on:
   push:
     branches: [main]
@@ -41,15 +42,10 @@ jobs:
 
       - name: Regenerate SDK from the OpenAPI spec
         env:
-          GOOSE_SPEC_URL: ${{ github.event_name == 'workflow_dispatch' && format('https://raw.githubusercontent.com/goose-network/goose/{0}/internal/api/docs/swagger.json', inputs.spec_ref || 'main') || '' }}
-        run: |
-          if [ -n "$GOOSE_SPEC_URL" ]; then
-            npm run generate
-          else
-            # Fetch the spec fresh from goose main; fail the job if the
-            # resulting schema is not up to date (diff shows in the PR).
-            npm run generate
-          fi
+          # A manual run can pin the spec source to any goose ref (branch,
+          # tag or SHA); scheduled/push runs use main.
+          GOOSE_SPEC_REF: ${{ inputs.spec_ref || 'main' }}
+        run: npm run generate
 
       - name: Build
         run: npm run build
