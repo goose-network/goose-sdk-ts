@@ -34,7 +34,9 @@ export class GooseClient {
   constructor(opts: GooseClientOptions) {
     this.baseUrl = opts.baseUrl.replace(/\/+$/, "");
     this.token = opts.token;
-    this.doFetch = opts.fetch ?? fetch;
+    // Bind to globalThis: calling a bare `fetch` reference with `this` rebound
+    // to the client throws "Illegal invocation" in browsers.
+    this.doFetch = opts.fetch ?? fetch.bind(globalThis);
   }
 
   /** GET an endpoint and decode the JSON body. */
