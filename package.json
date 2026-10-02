@@ -1,0 +1,39 @@
+{
+  "name": "@goose-network/goose-sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for the goose proxy-pool engine admin API, generated from its OpenAPI spec",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "generate": "node scripts/generate.mjs",
+    "build": "npm run generate && tsc -p tsconfig.json",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "goose",
+    "proxy",
+    "sdk",
+    "openapi"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0",
+    "swagger2openapi": "^7.0.8",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}
