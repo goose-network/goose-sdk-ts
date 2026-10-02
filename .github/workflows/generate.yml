@@ -17,6 +17,10 @@ on:
         description: "git ref in the goose repo to pull the spec from"
         required: false
         default: ""
+  repository_dispatch:
+    # Fired by the goose repo when internal/api/docs/swagger.json changes
+    # on main (see .github/workflows/notify-sdk.yml there).
+    types: [openapi-spec-changed]
 
 permissions:
   contents: write
@@ -42,9 +46,9 @@ jobs:
 
       - name: Regenerate SDK from the OpenAPI spec
         env:
-          # A manual run can pin the spec source to any goose ref (branch,
-          # tag or SHA); scheduled/push runs use main.
-          GOOSE_SPEC_REF: ${{ inputs.spec_ref || 'main' }}
+          # A manual run or repository_dispatch can pin the spec source to
+          # any goose ref (branch, tag or SHA); scheduled/push runs use main.
+          GOOSE_SPEC_REF: ${{ inputs.spec_ref || github.event.client_payload.ref || 'main' }}
         run: npm run generate
 
       - name: Build
