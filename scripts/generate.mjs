@@ -15,7 +15,7 @@ const root = path.resolve(__dirname, "..");
 
 const SPEC_URL =
   process.env.GOOSE_SPEC_URL ??
-  "https://raw.githubusercontent.com/goose-network/goose/main/internal/api/docs/swagger.json";
+  "https://raw.githubusercontent.com/goose-network/goose/{ref}/internal/api/docs/swagger.json";
 const SPEC_LOCAL = process.env.GOOSE_SPEC_LOCAL ?? "";
 const SPEC_REF = process.env.GOOSE_SPEC_REF ?? "main";
 const SPEC_V2 = path.join(root, ".spec", "swagger.json");
@@ -61,14 +61,16 @@ async function main() {
   );
 
   const generated = await readFile(OUT, "utf8");
+  // The banner must NOT embed the spec ref (branch/sha): the same spec must
+  // regenerate byte-identically regardless of where it was fetched from, or
+  // goose-repo and SDK-repo regenerations ping-pong on the diff. Which goose
+  // commit a regeneration came from is recorded in the commit message.
   const banner =
     "// GENERATED CODE — DO NOT EDIT BY HAND.\n" +
     "// Regenerate with `npm run generate` from internal/api/docs/swagger.json\n" +
-    "// in the goose repo. Source spec: " +
-    source +
-    "\n\n";
+    "// in the goose repo.\n\n";
   await writeFile(OUT, banner + generated);
-  console.log(`wrote ${path.relative(root, OUT)}`);
+  console.log(`wrote ${path.relative(root, OUT)} (spec: ${source})`);
 }
 
 main().catch((err) => {
