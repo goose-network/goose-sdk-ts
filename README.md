@@ -88,6 +88,7 @@ location.
 | `src/types.ts`      | friendly re-exports of the schema types                         |
 | `src/client.ts`     | fetch transport: base URL, bearer auth, JSON, error handling   |
 | `src/goose.ts`      | `Goose` class: one typed method group per API resource           |
+| `dist/`             | committed build output, so GitHub-tarball installs work as-is   |
 | `scripts/generate.mjs` | spec → OpenAPI 3 → `src/schema.ts` pipeline                  |
 
 ## License
