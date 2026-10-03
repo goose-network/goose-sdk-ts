@@ -110,6 +110,30 @@ export class Goose {
     async deleteChain(id) {
         return this.client.delete(`/api/chains/${encodeURIComponent(id)}`);
     }
+    // --- providers ---
+    /**
+     * List all dynamic outbound providers. Each provider owns a managed pool
+     * that its outbounds are merged into.
+     */
+    listProviders() {
+        return this.client.get("/api/providers");
+    }
+    /** Get one provider spec by id. */
+    getProvider(id) {
+        return this.client.get(`/api/providers/${encodeURIComponent(id)}`);
+    }
+    /** Create or replace a provider (collection form; the body carries the id). */
+    createProvider(provider) {
+        return this.client.send("POST", "/api/providers", provider);
+    }
+    /** Create or replace a provider at an explicit path id. */
+    putProvider(id, provider) {
+        return this.client.send("PUT", `/api/providers/${encodeURIComponent(id)}`, provider);
+    }
+    /** Delete a provider. Returns false when the id did not exist (404). */
+    async deleteProvider(id) {
+        return this.client.delete(`/api/providers/${encodeURIComponent(id)}`);
+    }
     // --- metrics ---
     /**
      * List recent request metrics, newest first.

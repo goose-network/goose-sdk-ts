@@ -6,7 +6,7 @@
 
 import type { components } from "./schema.js";
 import { GooseClient } from "./client.js";
-import type { ChainSpec, Engine, Inbound, OutboundSpec, Pool, RequestMetric } from "./types.js";
+import type { ChainSpec, Engine, Inbound, OutboundSpec, Pool, ProviderSpec, RequestMetric } from "./types.js";
 
 type EngineConfig = components["schemas"]["config.Engine"];
 
@@ -160,6 +160,40 @@ export class Goose {
   /** Delete a chain. Returns false when the id did not exist (404). */
   async deleteChain(id: string): Promise<boolean> {
     return this.client.delete(`/api/chains/${encodeURIComponent(id)}`);
+  }
+
+  // --- providers ---
+
+  /**
+   * List all dynamic outbound providers. Each provider owns a managed pool
+   * that its outbounds are merged into.
+   */
+  listProviders(): Promise<ProviderSpec[]> {
+    return this.client.get<ProviderSpec[]>("/api/providers");
+  }
+
+  /** Get one provider spec by id. */
+  getProvider(id: string): Promise<ProviderSpec> {
+    return this.client.get<ProviderSpec>(`/api/providers/${encodeURIComponent(id)}`);
+  }
+
+  /** Create or replace a provider (collection form; the body carries the id). */
+  createProvider(provider: ProviderSpec): Promise<ProviderSpec> {
+    return this.client.send<ProviderSpec>("POST", "/api/providers", provider);
+  }
+
+  /** Create or replace a provider at an explicit path id. */
+  putProvider(id: string, provider: Partial<ProviderSpec>): Promise<ProviderSpec> {
+    return this.client.send<ProviderSpec>(
+      "PUT",
+      `/api/providers/${encodeURIComponent(id)}`,
+      provider,
+    );
+  }
+
+  /** Delete a provider. Returns false when the id did not exist (404). */
+  async deleteProvider(id: string): Promise<boolean> {
+    return this.client.delete(`/api/providers/${encodeURIComponent(id)}`);
   }
 
   // --- metrics ---

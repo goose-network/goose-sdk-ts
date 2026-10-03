@@ -4,6 +4,7 @@ export type Inbound = components["schemas"]["config.Inbound"];
 export type OutboundSpec = components["schemas"]["config.OutboundSpec"];
 export type Pool = components["schemas"]["config.Pool"];
 export type ChainSpec = components["schemas"]["config.ChainSpec"];
+export type ProviderSpec = components["schemas"]["config.ProviderSpec"];
 export type RequestMetric = components["schemas"]["core.RequestMetric"];
 export type ApiError = components["schemas"]["api.errResponse"];
 export type { components, paths };

@@ -102,6 +102,53 @@ describe("Goose SDK", () => {
     expect(await goose.deleteInbound("ghost")).toBe(false);
   });
 
+  it("creates, lists and deletes a provider spec", async () => {
+    const goose = newGoose({
+      "POST /api/providers": [
+        201,
+        {
+          id: "sub-1",
+          provider: "subscription",
+          pool_id: "pool-sub",
+          config: { url: "https://example.com/sub" },
+        },
+      ],
+      "GET /api/providers": [
+        200,
+        [
+          {
+            id: "sub-1",
+            provider: "subscription",
+            pool_id: "pool-sub",
+            config: { url: "https://example.com/sub" },
+          },
+        ],
+      ],
+      "GET /api/providers/sub-1": [
+        200,
+        {
+          id: "sub-1",
+          provider: "subscription",
+          pool_id: "pool-sub",
+          config: { url: "https://example.com/sub" },
+        },
+      ],
+      "DELETE /api/providers/sub-1": 204,
+    });
+    const created = await goose.createProvider({
+      id: "sub-1",
+      provider: "subscription",
+      pool_id: "pool-sub",
+      config: { url: "https://example.com/sub" },
+    });
+    expect(created.id).toBe("sub-1");
+    const list = await goose.listProviders();
+    expect(list[0]?.pool_id).toBe("pool-sub");
+    const one = await goose.getProvider("sub-1");
+    expect(one.config?.url).toBe("https://example.com/sub");
+    expect(await goose.deleteProvider("sub-1")).toBe(true);
+  });
+
   it("normalizes error bodies into GooseApiError", async () => {
     const goose = newGoose({
       "PUT /api/engine": [400, { error: "engine: stack must be one of system, gvisor" }],
