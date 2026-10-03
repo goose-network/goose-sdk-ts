@@ -1372,6 +1372,326 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Delete a provider
+         * @description Returns all configured dynamic outbound providers. Each provider owns a managed pool that its outbounds are merged into.
+         *     Returns the provider spec with the given id.
+         *     Creates (or replaces) a dynamic outbound provider. The provider names a registered provider plugin (e.g. "psiphon", "subscription"); pool_id is the managed pool its outbounds are merged into; config is plugin-specific. Changes apply live: the engine starts, restarts, or stops the provider's poll loop on the next config version bump.
+         *     Removes the provider with the given id, stops its poll loop, and drops its managed outbounds and pool.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Provider id */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: components["requestBodies"]["config.ProviderSpec"];
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["config.ProviderSpec"];
+                    };
+                };
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["config.ProviderSpec"];
+                    };
+                };
+                /** @description No content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Delete a provider
+         * @description Returns all configured dynamic outbound providers. Each provider owns a managed pool that its outbounds are merged into.
+         *     Returns the provider spec with the given id.
+         *     Creates (or replaces) a dynamic outbound provider. The provider names a registered provider plugin (e.g. "psiphon", "subscription"); pool_id is the managed pool its outbounds are merged into; config is plugin-specific. Changes apply live: the engine starts, restarts, or stops the provider's poll loop on the next config version bump.
+         *     Removes the provider with the given id, stops its poll loop, and drops its managed outbounds and pool.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Provider id */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: components["requestBodies"]["config.ProviderSpec"];
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["config.ProviderSpec"];
+                    };
+                };
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["config.ProviderSpec"];
+                    };
+                };
+                /** @description No content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/providers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Delete a provider
+         * @description Returns all configured dynamic outbound providers. Each provider owns a managed pool that its outbounds are merged into.
+         *     Returns the provider spec with the given id.
+         *     Creates (or replaces) a dynamic outbound provider. The provider names a registered provider plugin (e.g. "psiphon", "subscription"); pool_id is the managed pool its outbounds are merged into; config is plugin-specific. Changes apply live: the engine starts, restarts, or stops the provider's poll loop on the next config version bump.
+         *     Removes the provider with the given id, stops its poll loop, and drops its managed outbounds and pool.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Provider id */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: components["requestBodies"]["config.ProviderSpec"];
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["config.ProviderSpec"];
+                    };
+                };
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["config.ProviderSpec"];
+                    };
+                };
+                /** @description No content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        /**
+         * Delete a provider
+         * @description Returns all configured dynamic outbound providers. Each provider owns a managed pool that its outbounds are merged into.
+         *     Returns the provider spec with the given id.
+         *     Creates (or replaces) a dynamic outbound provider. The provider names a registered provider plugin (e.g. "psiphon", "subscription"); pool_id is the managed pool its outbounds are merged into; config is plugin-specific. Changes apply live: the engine starts, restarts, or stops the provider's poll loop on the next config version bump.
+         *     Removes the provider with the given id, stops its poll loop, and drops its managed outbounds and pool.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Provider id */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: components["requestBodies"]["config.ProviderSpec"];
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["config.ProviderSpec"];
+                    };
+                };
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["config.ProviderSpec"];
+                    };
+                };
+                /** @description No content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 };
 export type webhooks = Record<string, never>;
 export type components = {
@@ -1444,6 +1764,16 @@ export type components = {
             outbound_ids?: string[];
             selector?: components["schemas"]["config.SelectorSpec"];
         };
+        "config.ProviderSpec": {
+            config?: {
+                [key: string]: unknown;
+            };
+            id?: string;
+            /** @description managed pool to populate */
+            pool_id?: string;
+            /** @description plugin name, e.g. "psiphon" */
+            provider?: string;
+        };
         "config.SelectorSpec": {
             /** @description Params is strategy-specific config, e.g. sticky: {"key":"domain"}. */
             params?: {
@@ -1507,6 +1837,12 @@ export type components = {
         "config.Pool": {
             content: {
                 "application/json": components["schemas"]["config.Pool"];
+            };
+        };
+        /** @description Provider to create */
+        "config.ProviderSpec": {
+            content: {
+                "application/json": components["schemas"]["config.ProviderSpec"];
             };
         };
     };
