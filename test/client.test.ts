@@ -177,4 +177,46 @@ describe("Goose SDK", () => {
     await goose.listMetrics();
     expect(sawPath).toBe("/api/metrics");
   });
+
+  it("lists exit checks with n and outbound_id filters", async () => {
+    let sawPath = "";
+    const fetcher = (async (input: RequestInfo | URL) => {
+      sawPath = String(input).replace("http://goose.test", "");
+      return new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }) as typeof fetch;
+    const goose = new Goose(new GooseClient({ baseUrl: "http://goose.test", fetch: fetcher }));
+    await goose.listExitChecks({ n: 20, outboundID: "ob1" });
+    expect(sawPath).toBe("/api/exit-checks?n=20&outbound_id=ob1");
+    await goose.listExitChecks();
+    expect(sawPath).toBe("/api/exit-checks");
+  });
+
+  it("triggers an on-demand exit-check round", async () => {
+    const goose = newGoose({
+      "POST /api/exit-checks/run": [202, { error: "exit-IP check round started" }],
+    });
+    await goose.runExitChecks();
+  });
+
+  it("lists chain probes", async () => {
+    const goose = newGoose({
+      "GET /api/chains/probes": [200, [
+        {
+          outboundID: "ob1",
+          address: "1.2.3.4:1080",
+          poolID: "work",
+          direct: { ok: false, error: "blocked", at: "2026-10-24T00:00:00Z" },
+          relay: { ok: true, latency: 40000000, at: "2026-10-24T00:00:00Z" },
+          relayVia: "access1",
+        },
+      ]],
+    });
+    const probes = await goose.listChainProbes();
+    expect(probes.length).toBe(1);
+    expect(probes[0]?.relayVia).toBe("access1");
+    expect(probes[0]?.direct?.ok).toBe(false);
+  });
 });

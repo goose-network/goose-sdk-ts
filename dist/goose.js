@@ -145,5 +145,25 @@ export class Goose {
         const q = n === undefined ? "" : `?n=${encodeURIComponent(n)}`;
         return this.client.get(`/api/metrics${q}`);
     }
+    // --- exit checks ---
+    /** List recent exit-IP check results, newest first. */
+    listExitChecks(opts) {
+        const parts = [];
+        if (opts?.n !== undefined)
+            parts.push(`n=${encodeURIComponent(opts.n)}`);
+        if (opts?.outboundID !== undefined && opts.outboundID !== "") {
+            parts.push(`outbound_id=${encodeURIComponent(opts.outboundID)}`);
+        }
+        const q = parts.length === 0 ? "" : `?${parts.join("&")}`;
+        return this.client.get(`/api/exit-checks${q}`);
+    }
+    /** Start one exit-IP check round now (background). */
+    runExitChecks() {
+        return this.client.send("POST", "/api/exit-checks/run", undefined);
+    }
+    /** List the latest auto-chain reachability probes. */
+    listChainProbes() {
+        return this.client.get("/api/chains/probes");
+    }
 }
 //# sourceMappingURL=goose.js.map

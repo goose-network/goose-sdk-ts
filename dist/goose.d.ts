@@ -1,6 +1,6 @@
 import type { components } from "./schema.js";
 import { GooseClient } from "./client.js";
-import type { ChainSpec, Engine, Inbound, OutboundSpec, Pool, ProviderSpec, RequestMetric } from "./types.js";
+import type { ChainSpec, Engine, ExitCheck, Inbound, OutboundSpec, Pool, ProbeStatus, ProviderSpec, RequestMetric } from "./types.js";
 type EngineConfig = components["schemas"]["config.Engine"];
 /** Typed client for the goose admin API. */
 export declare class Goose {
@@ -72,6 +72,15 @@ export declare class Goose {
      *        caps at 10000.
      */
     listMetrics(n?: number): Promise<RequestMetric[]>;
+    /** List recent exit-IP check results, newest first. */
+    listExitChecks(opts?: {
+        n?: number;
+        outboundID?: string;
+    }): Promise<ExitCheck[]>;
+    /** Start one exit-IP check round now (background). */
+    runExitChecks(): Promise<void>;
+    /** List the latest auto-chain reachability probes. */
+    listChainProbes(): Promise<ProbeStatus[]>;
 }
 export {};
 //# sourceMappingURL=goose.d.ts.map

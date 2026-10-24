@@ -11,6 +11,9 @@ export type Pool = components["schemas"]["config.Pool"];
 export type ChainSpec = components["schemas"]["config.ChainSpec"];
 export type ProviderSpec = components["schemas"]["config.ProviderSpec"];
 export type RequestMetric = components["schemas"]["core.RequestMetric"];
+export type ExitCheck = components["schemas"]["core.ExitCheck"];
+export type ProbeStatus = components["schemas"]["core.ProbeStatus"];
+export type ExitCheckConfig = components["schemas"]["config.ExitCheckConfig"];
 export type ApiError = components["schemas"]["api.errResponse"];
 
 export type { components, paths };

@@ -6,7 +6,17 @@
 
 import type { components } from "./schema.js";
 import { GooseClient } from "./client.js";
-import type { ChainSpec, Engine, Inbound, OutboundSpec, Pool, ProviderSpec, RequestMetric } from "./types.js";
+import type {
+  ChainSpec,
+  Engine,
+  ExitCheck,
+  Inbound,
+  OutboundSpec,
+  Pool,
+  ProbeStatus,
+  ProviderSpec,
+  RequestMetric,
+} from "./types.js";
 
 type EngineConfig = components["schemas"]["config.Engine"];
 
@@ -207,5 +217,31 @@ export class Goose {
   listMetrics(n?: number): Promise<RequestMetric[]> {
     const q = n === undefined ? "" : `?n=${encodeURIComponent(n)}`;
     return this.client.get<RequestMetric[]>(`/api/metrics${q}`);
+  }
+
+  // --- exit checks ---
+
+  /** List recent exit-IP check results, newest first. */
+  listExitChecks(opts?: {
+    n?: number;
+    outboundID?: string;
+  }): Promise<ExitCheck[]> {
+    const parts: string[] = [];
+    if (opts?.n !== undefined) parts.push(`n=${encodeURIComponent(opts.n)}`);
+    if (opts?.outboundID !== undefined && opts.outboundID !== "") {
+      parts.push(`outbound_id=${encodeURIComponent(opts.outboundID)}`);
+    }
+    const q = parts.length === 0 ? "" : `?${parts.join("&")}`;
+    return this.client.get<ExitCheck[]>(`/api/exit-checks${q}`);
+  }
+
+  /** Start one exit-IP check round now (background). */
+  runExitChecks(): Promise<void> {
+    return this.client.send<void>("POST", "/api/exit-checks/run", undefined);
+  }
+
+  /** List the latest auto-chain reachability probes. */
+  listChainProbes(): Promise<ProbeStatus[]> {
+    return this.client.get<ProbeStatus[]>("/api/chains/probes");
   }
 }

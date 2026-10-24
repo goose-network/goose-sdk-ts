@@ -157,6 +157,45 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/chains/probes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List reachability probes for access-filtered pool members
+         * @description Returns the latest auto-chain reachability verdict per probed outbound: whether the engine can dial the member's server directly and, when it cannot, whether an access-pool proxy can relay to it (and which one). Members whose server is unreachable both ways are dropped from routing; members reachable only via relay are routed through that relay (auto-built chain).
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["core.ProbeStatus"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/chains/{id}": {
         parameters: {
             query?: never;
@@ -359,6 +398,125 @@ export type paths = {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exit-checks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List recent exit-IP check results
+         * @description Returns up to n recent exit-IP check records, newest first: for each checked outbound, the site it was asked, the public IP observed at the proxy's exit, latency, and time. Optionally filtered to one outbound. A proxy's connect address is not its exit address, and the exit can vary by site and over time — history makes both visible. Scheduling is configured on the engine resource (exit_checks.enabled / cron / interval_seconds / sites / timeout_seconds / concurrency).
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Number of records to return (default 100, max 10000) */
+                    n?: number;
+                    /** @description Only results for this outbound */
+                    outbound_id?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["core.ExitCheck"][];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exit-checks/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Trigger an exit-IP check round now
+         * @description Starts one exit-IP check round immediately (background); results appear in GET /api/exit-checks as they complete. Uses the engine's exit-check site list, timeout, and concurrency. Scheduling (cron/interval) is unaffected.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "*/*": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "*/*": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Service Unavailable */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "*/*": components["schemas"]["api.errResponse"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -1703,6 +1861,21 @@ export type components = {
             /** @description Token is the bearer token for admin auth; empty disables auth. */
             token?: string;
         };
+        "config.AccessFilterSpec": {
+            /**
+             * @description AccessPoolID is the pool of access (relay) proxies used to reach
+             *     members whose servers the local network cannot dial directly (e.g.
+             *     proxies behind an ISP block). Required; must reference an existing pool.
+             */
+            access_pool_id?: string;
+            /**
+             * @description ProbeIntervalSec is seconds between reachability probe rounds.
+             *     Default 300; minimum 10.
+             */
+            probe_interval_seconds?: number;
+            /** @description ProbeTimeoutSec bounds each probe dial. Default 5; minimum 1. */
+            probe_timeout_seconds?: number;
+        };
         "config.ChainSpec": {
             id?: string;
             /** @description PoolIDs, in order */
@@ -1713,10 +1886,42 @@ export type components = {
             api?: components["schemas"]["config.APIConfig"];
             /** @description DB is the metrics database path. */
             db?: string;
+            /**
+             * @description ExitChecks configures scheduled exit-IP checks: the engine dials each
+             *     outbound and asks an "what is my IP" style site for the exit IP,
+             *     recording results. Zero value (disabled) keeps the engine from making
+             *     any unsolicited outbound requests.
+             */
+            exit_checks?: components["schemas"]["config.ExitCheckConfig"];
             /** @description Geo is the offline IP database config. */
             geo?: components["schemas"]["config.GeoConfig"];
             /** @description Stack selects the network stack: "system" or "gvisor". */
             stack?: string;
+        };
+        "config.ExitCheckConfig": {
+            /**
+             * @description Concurrency caps parallel checks in one round, protecting the check
+             *     sites (and their rate limits) from a burst. Default 4; minimum 1.
+             */
+            concurrency?: number;
+            /**
+             * @description Cron is a 5-field crontab expression (min hour dom mon dow) for the
+             *     check schedule. When set it takes precedence over IntervalSec.
+             */
+            cron?: string;
+            /** @description Enabled turns scheduled checks on. Default false. */
+            enabled?: boolean;
+            /** @description IntervalSec is seconds between check rounds, used when Cron is empty. */
+            interval_seconds?: number;
+            /**
+             * @description Sites are exit-IP check URLs that respond with the caller's IP as
+             *     plain text (e.g. https://ifconfig.me). Checks rotate round-robin
+             *     across this list so large batches spread load instead of tripping one
+             *     site's rate limits. Empty selects the built-in defaults.
+             */
+            sites?: string[];
+            /** @description TimeoutSec bounds each check. Default 15; minimum 1. */
+            timeout_seconds?: number;
         };
         "config.FilterSpec": {
             /** @description Params is filter-specific config, e.g. {"countries":["US"]}. */
@@ -1765,6 +1970,15 @@ export type components = {
             protocol?: string;
         };
         "config.Pool": {
+            /**
+             * @description Access, when set, turns the pool into an auto-chained pool: the engine
+             *     probes each member's server for direct reachability from the local
+             *     network; members the local ISP cannot reach are dialed through an
+             *     access proxy from Access.AccessPoolID (a relay hop is prepended
+             *     automatically), and members reachable neither directly nor through the
+             *     access pool are dropped from the pool's candidates.
+             */
+            access?: components["schemas"]["config.AccessFilterSpec"];
             filters?: components["schemas"]["config.FilterSpec"][];
             id?: string;
             outbound_ids?: string[];
@@ -1797,8 +2011,40 @@ export type components = {
             policy?: components["schemas"]["config.InboundPolicy"];
             username?: string;
         };
+        "core.ExitCheck": {
+            error?: string;
+            exitIP?: string;
+            id?: string;
+            latency?: components["schemas"]["time.Duration"];
+            outboundID?: string;
+            /**
+             * @description Site is the host of the check site that was asked (e.g.
+             *     "ifconfig.me").
+             */
+            site?: string;
+            startedAt?: string;
+            success?: boolean;
+        };
         /** @enum {string} */
         "core.Network": "tcp" | "udp" | "tcp" | "udp";
+        "core.ProbeStatus": {
+            address?: string;
+            direct?: components["schemas"]["core.ProbeVerdict"];
+            outboundID?: string;
+            poolID?: string;
+            relay?: components["schemas"]["core.ProbeVerdict"];
+            relayVia?: string;
+        };
+        "core.ProbeVerdict": {
+            /** @description At is when the probe ran. */
+            at?: string;
+            /** @description Error is the dial error when OK is false. */
+            error?: string;
+            /** @description Latency is how long the dial took. */
+            latency?: components["schemas"]["time.Duration"];
+            /** @description OK reports whether the dial succeeded. */
+            ok?: boolean;
+        };
         "core.RequestMetric": {
             chain?: string[];
             error?: string;
@@ -1816,7 +2062,7 @@ export type components = {
          * Format: int64
          * @enum {integer}
          */
-        "time.Duration": 1 | 1000 | 1000000;
+        "time.Duration": -9223372036854776000 | 9223372036854776000 | 1 | 1000 | 1000000 | 1000000000 | 60000000000 | 3600000000000 | -9223372036854776000 | 9223372036854776000 | 1 | 1000 | 1000000 | 1000000000 | 60000000000 | 3600000000000;
     };
     responses: never;
     parameters: never;
