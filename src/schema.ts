@@ -1690,6 +1690,54 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/providers/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List provider status
+         * @description Returns the live observability view of every dynamic outbound provider the engine tracks: lifecycle state (starting/running/error/stopped), last poll times and result, outbound count, pools fed, and — when the plugin implements the optional StatusReporter contract — its own self-reported details (e.g. Psiphon tunnel establishment per server and server-list state). Stopped or failed-to-start providers appear here too, so an empty pool is explainable without reading engine logs.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["provider.ProviderStatus"][];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/providers/{id}": {
         parameters: {
             query?: never;
@@ -2101,11 +2149,60 @@ export type components = {
             target?: string;
             user?: string;
         };
+        "github_com_goose-network_goose_pkg_plugin.ProviderStatus": {
+            /**
+             * @description Details carries plugin-specific live facts (counts, addresses,
+             *     timestamps). Keys are the plugin's own; the UI renders them as-is.
+             */
+            details?: {
+                [key: string]: unknown;
+            };
+            /**
+             * @description Message is one line of context for the state, e.g. the last error or
+             *     a progress note. Empty means "nothing to say".
+             */
+            message?: string;
+            /**
+             * @description State is a short, human-readable phase word, e.g. "running",
+             *     "establishing", "error". Plugins pick their own vocabulary; the
+             *     engine surfaces it verbatim.
+             */
+            state?: string;
+        };
+        "provider.ProviderStatus": {
+            /** @description ID is the provider spec ID. */
+            id?: string;
+            /** @description LastOKAt is when Outbounds last succeeded. */
+            last_ok_at?: string;
+            /** @description LastPollAt is when Outbounds was last called, successfully or not. */
+            last_poll_at?: string;
+            /** @description Message carries the last Outbounds error when State is "error". */
+            message?: string;
+            /** @description OutboundCount is the last successful poll's outbound count. */
+            outbound_count?: number;
+            /**
+             * @description Plugin holds the provider's own self-assessment, when it implements
+             *     pub.StatusReporter. Nil (and omitted from JSON) when it does not.
+             */
+            plugin?: components["schemas"]["github_com_goose-network_goose_pkg_plugin.ProviderStatus"];
+            /** @description Pools lists the pool IDs the provider feeds. */
+            pools?: string[];
+            /** @description Provider is the plugin name, e.g. "psiphon". */
+            provider?: string;
+            /** @description StartedAt is when the provider instance was instantiated. */
+            started_at?: string;
+            /**
+             * @description State is the engine's phase word: "running" (goroutine alive, last
+             *     poll succeeded), "error" (last poll failed — pools kept stale), or
+             *     "starting" (instantiated but not yet polled).
+             */
+            state?: string;
+        };
         /**
          * Format: int64
          * @enum {integer}
          */
-        "time.Duration": 1 | 1000 | 1000000;
+        "time.Duration": 1 | 1000 | 1000000 | 1000000000 | 60000000000;
     };
     responses: never;
     parameters: never;

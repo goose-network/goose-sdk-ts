@@ -165,5 +165,14 @@ export class Goose {
     listChainProbes() {
         return this.client.get("/api/chains/probes");
     }
+    /**
+     * List the live provider observability view: lifecycle state and poll
+     * results for every dynamic outbound provider the engine tracks, plus
+     * each plugin's own self-reported status when it implements the
+     * StatusReporter contract.
+     */
+    listProviderStatus() {
+        return this.client.get("/api/providers/status");
+    }
 }
 //# sourceMappingURL=goose.js.map

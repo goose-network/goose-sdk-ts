@@ -1,6 +1,6 @@
 import type { components } from "./schema.js";
 import { GooseClient } from "./client.js";
-import type { ChainSpec, Engine, ExitCheck, Inbound, OutboundSpec, Pool, ProbeStatus, ProviderSpec, RequestMetric } from "./types.js";
+import type { ChainSpec, Engine, ExitCheck, Inbound, OutboundSpec, Pool, ProbeStatus, ProviderStatus, ProviderSpec, RequestMetric } from "./types.js";
 type EngineConfig = components["schemas"]["config.Engine"];
 /** Typed client for the goose admin API. */
 export declare class Goose {
@@ -81,6 +81,13 @@ export declare class Goose {
     runExitChecks(): Promise<void>;
     /** List the latest auto-chain reachability probes. */
     listChainProbes(): Promise<ProbeStatus[]>;
+    /**
+     * List the live provider observability view: lifecycle state and poll
+     * results for every dynamic outbound provider the engine tracks, plus
+     * each plugin's own self-reported status when it implements the
+     * StatusReporter contract.
+     */
+    listProviderStatus(): Promise<ProviderStatus[]>;
 }
 export {};
 //# sourceMappingURL=goose.d.ts.map

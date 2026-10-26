@@ -14,6 +14,7 @@ import type {
   OutboundSpec,
   Pool,
   ProbeStatus,
+  ProviderStatus,
   ProviderSpec,
   RequestMetric,
 } from "./types.js";
@@ -243,5 +244,15 @@ export class Goose {
   /** List the latest auto-chain reachability probes. */
   listChainProbes(): Promise<ProbeStatus[]> {
     return this.client.get<ProbeStatus[]>("/api/chains/probes");
+  }
+
+  /**
+   * List the live provider observability view: lifecycle state and poll
+   * results for every dynamic outbound provider the engine tracks, plus
+   * each plugin's own self-reported status when it implements the
+   * StatusReporter contract.
+   */
+  listProviderStatus(): Promise<ProviderStatus[]> {
+    return this.client.get<ProviderStatus[]>("/api/providers/status");
   }
 }
