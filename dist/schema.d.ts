@@ -1534,10 +1534,10 @@ export type paths = {
         };
         /**
          * Delete a provider
-         * @description Returns all configured dynamic outbound providers. Each provider owns a managed pool that its outbounds are merged into; providers created without a pool_id report the default pool "default".
+         * @description Returns all configured dynamic outbound providers. Each provider feeds one or more managed pools (pool_ids) with the outbounds it fetches; providers created without a pool_ids list report the default pool "default".
          *     Returns the provider spec with the given id.
-         *     Creates (or replaces) a dynamic outbound provider. The provider names a registered provider plugin (e.g. "psiphon", "subscription", "mihomo", "singbox"); pool_id is the managed pool its outbounds are merged into, defaulting to the "default" pool when omitted; config is plugin-specific. Changes apply live: the engine starts, restarts, or stops the provider's poll loop on the next config version bump.
-         *     Removes the provider with the given id, stops its poll loop, and drops its managed outbounds and pool.
+         *     Creates (or replaces) a dynamic outbound provider. The provider names a registered provider plugin (e.g. "psiphon", "subscription", "mihomo", "singbox"); pool_ids lists the managed pools its outbounds are merged into — every pool in the list receives the provider's full outbound set — and defaults to ["default"] when omitted (the legacy singular pool_id is still accepted as a one-entry list); config is plugin-specific. Changes apply live: the engine starts, restarts, or stops the provider's poll loop on the next config version bump.
+         *     Removes the provider with the given id, stops its poll loop, and drops its managed outbounds and every pool it exclusively fed.
          */
         get: {
             parameters: {
@@ -1608,10 +1608,10 @@ export type paths = {
         put?: never;
         /**
          * Delete a provider
-         * @description Returns all configured dynamic outbound providers. Each provider owns a managed pool that its outbounds are merged into; providers created without a pool_id report the default pool "default".
+         * @description Returns all configured dynamic outbound providers. Each provider feeds one or more managed pools (pool_ids) with the outbounds it fetches; providers created without a pool_ids list report the default pool "default".
          *     Returns the provider spec with the given id.
-         *     Creates (or replaces) a dynamic outbound provider. The provider names a registered provider plugin (e.g. "psiphon", "subscription", "mihomo", "singbox"); pool_id is the managed pool its outbounds are merged into, defaulting to the "default" pool when omitted; config is plugin-specific. Changes apply live: the engine starts, restarts, or stops the provider's poll loop on the next config version bump.
-         *     Removes the provider with the given id, stops its poll loop, and drops its managed outbounds and pool.
+         *     Creates (or replaces) a dynamic outbound provider. The provider names a registered provider plugin (e.g. "psiphon", "subscription", "mihomo", "singbox"); pool_ids lists the managed pools its outbounds are merged into — every pool in the list receives the provider's full outbound set — and defaults to ["default"] when omitted (the legacy singular pool_id is still accepted as a one-entry list); config is plugin-specific. Changes apply live: the engine starts, restarts, or stops the provider's poll loop on the next config version bump.
+         *     Removes the provider with the given id, stops its poll loop, and drops its managed outbounds and every pool it exclusively fed.
          */
         post: {
             parameters: {
@@ -1694,10 +1694,10 @@ export type paths = {
         };
         /**
          * Delete a provider
-         * @description Returns all configured dynamic outbound providers. Each provider owns a managed pool that its outbounds are merged into; providers created without a pool_id report the default pool "default".
+         * @description Returns all configured dynamic outbound providers. Each provider feeds one or more managed pools (pool_ids) with the outbounds it fetches; providers created without a pool_ids list report the default pool "default".
          *     Returns the provider spec with the given id.
-         *     Creates (or replaces) a dynamic outbound provider. The provider names a registered provider plugin (e.g. "psiphon", "subscription", "mihomo", "singbox"); pool_id is the managed pool its outbounds are merged into, defaulting to the "default" pool when omitted; config is plugin-specific. Changes apply live: the engine starts, restarts, or stops the provider's poll loop on the next config version bump.
-         *     Removes the provider with the given id, stops its poll loop, and drops its managed outbounds and pool.
+         *     Creates (or replaces) a dynamic outbound provider. The provider names a registered provider plugin (e.g. "psiphon", "subscription", "mihomo", "singbox"); pool_ids lists the managed pools its outbounds are merged into — every pool in the list receives the provider's full outbound set — and defaults to ["default"] when omitted (the legacy singular pool_id is still accepted as a one-entry list); config is plugin-specific. Changes apply live: the engine starts, restarts, or stops the provider's poll loop on the next config version bump.
+         *     Removes the provider with the given id, stops its poll loop, and drops its managed outbounds and every pool it exclusively fed.
          */
         get: {
             parameters: {
@@ -1769,10 +1769,10 @@ export type paths = {
         post?: never;
         /**
          * Delete a provider
-         * @description Returns all configured dynamic outbound providers. Each provider owns a managed pool that its outbounds are merged into; providers created without a pool_id report the default pool "default".
+         * @description Returns all configured dynamic outbound providers. Each provider feeds one or more managed pools (pool_ids) with the outbounds it fetches; providers created without a pool_ids list report the default pool "default".
          *     Returns the provider spec with the given id.
-         *     Creates (or replaces) a dynamic outbound provider. The provider names a registered provider plugin (e.g. "psiphon", "subscription", "mihomo", "singbox"); pool_id is the managed pool its outbounds are merged into, defaulting to the "default" pool when omitted; config is plugin-specific. Changes apply live: the engine starts, restarts, or stops the provider's poll loop on the next config version bump.
-         *     Removes the provider with the given id, stops its poll loop, and drops its managed outbounds and pool.
+         *     Creates (or replaces) a dynamic outbound provider. The provider names a registered provider plugin (e.g. "psiphon", "subscription", "mihomo", "singbox"); pool_ids lists the managed pools its outbounds are merged into — every pool in the list receives the provider's full outbound set — and defaults to ["default"] when omitted (the legacy singular pool_id is still accepted as a one-entry list); config is plugin-specific. Changes apply live: the engine starts, restarts, or stops the provider's poll loop on the next config version bump.
+         *     Removes the provider with the given id, stops its poll loop, and drops its managed outbounds and every pool it exclusively fed.
          */
         delete: {
             parameters: {
@@ -1989,8 +1989,8 @@ export type components = {
                 [key: string]: unknown;
             };
             id?: string;
-            /** @description PoolID is the managed pool to populate; empty means the default pool. */
-            pool_id?: string;
+            /** @description PoolIDs are the managed pools to populate; empty means the default pool. */
+            pool_ids?: string[];
             /** @description plugin name, e.g. "psiphon" */
             provider?: string;
         };
