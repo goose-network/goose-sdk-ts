@@ -2023,6 +2023,23 @@ export type components = {
             };
             id?: string;
             protocol?: string;
+            /**
+             * @description UpstreamProxy routes this outbound's own connection to its proxy
+             *     server through an engine-managed route instead of dialing it directly
+             *     from the engine host. Empty (the default) keeps the pre-existing
+             *     behavior: the server connection rides the engine stack alone. The
+             *     reference forms are the same ones ProviderSpec.UpstreamProxy accepts
+             *     (outbound:<id>, pool:<id>, chain:<id>, a bare id, or "direct"), minus
+             *     "access" — that form resolves the access pool of the pools a
+             *     *provider* feeds, and a static outbound feeds none. The engine
+             *     resolves the reference at dial time against live config and injects
+             *     the dialer into the plugin's config map under
+             *     pkg/plugin.UpstreamDialerKey; outbound plugins that support an
+             *     upstream (http, socks5, mihomo-*, singbox-*) reach their server
+             *     through it, composing with the engine stack: the route's own first
+             *     hop dials through the engine's system/gvisor stack.
+             */
+            upstream_proxy?: string;
         };
         "config.Pool": {
             /**
@@ -2063,6 +2080,9 @@ export type components = {
              *         failover across members; the pool's access filter applies, so
              *         members the local network cannot reach are dialed through the
              *         pool's access proxies)
+             *       - "chain:<id>":     traverse a named chain layer by layer (real
+             *         multi-hop semantics: hop i CONNECTs toward hop i+1's server, the
+             *         last hop toward the fetch target)
              *       - "access":         dial the fetch target directly first, and fall
              *         back to the access pool of the pools this provider feeds (the
              *         same direct-vs-relay testing the access filter does for pool
