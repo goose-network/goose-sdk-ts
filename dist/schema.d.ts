@@ -157,45 +157,6 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
-    "/api/chains/probes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List reachability probes for access-filtered pool members
-         * @description Returns the latest auto-chain reachability verdict per probed outbound: whether the engine can dial the member's server directly and, when it cannot, whether an access-pool proxy can relay to it (and which one). Members whose server is unreachable both ways are dropped from routing; members reachable only via relay are routed through that relay (auto-built chain).
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["core.ProbeStatus"][];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/chains/{id}": {
         parameters: {
             query?: never;
@@ -845,8 +806,8 @@ export type paths = {
             cookie?: never;
         };
         /**
-         * List recent request metrics
-         * @description Returns up to n recent proxied-request records, newest first, each carrying the chain that served it. n defaults to 100; values above 10000 are capped; invalid values fall back to the default.
+         * List recent outbound metrics
+         * @description Returns up to n recent outbound metric rows, newest first, each carrying the path that produced it: a proxied request's chain, or a reachability probe row whose chain starts with "local" (the engine's own network dialing an outbound's server). n defaults to 100; values above 10000 are capped; invalid values fall back to the default.
          */
         get: {
             parameters: {
@@ -1909,21 +1870,6 @@ export type components = {
             /** @description Token is the bearer token for admin auth; empty disables auth. */
             token?: string;
         };
-        "config.AccessFilterSpec": {
-            /**
-             * @description AccessPoolID is the pool of access (relay) proxies used to reach
-             *     members whose servers the local network cannot dial directly (e.g.
-             *     proxies behind an ISP block). Required; must reference an existing pool.
-             */
-            access_pool_id?: string;
-            /**
-             * @description ProbeIntervalSec is seconds between reachability probe rounds.
-             *     Default 300; minimum 10.
-             */
-            probe_interval_seconds?: number;
-            /** @description ProbeTimeoutSec bounds each probe dial. Default 5; minimum 1. */
-            probe_timeout_seconds?: number;
-        };
         "config.ChainSpec": {
             id?: string;
             /** @description pool or outbound IDs, in order */
@@ -1943,6 +1889,14 @@ export type components = {
             exit_checks?: components["schemas"]["config.ExitCheckConfig"];
             /** @description Geo is the offline IP database config. */
             geo?: components["schemas"]["config.GeoConfig"];
+            /**
+             * @description Probes configures scheduled reachability probes: the engine dials each
+             *     outbound's proxy server from the local network and records the outcome
+             *     as an outbound metric row (first hop "local"), so routing narrows a
+             *     pool's first-hop candidates by measured reachability. Zero value
+             *     (disabled) keeps the engine from making any unsolicited probe dials.
+             */
+            probes?: components["schemas"]["config.ProbeConfig"];
             /** @description Stack selects the network stack: "system" or "gvisor". */
             stack?: string;
         };
@@ -2029,11 +1983,9 @@ export type components = {
              *     from the engine host. Empty (the default) keeps the pre-existing
              *     behavior: the server connection rides the engine stack alone. The
              *     reference forms are the same ones ProviderSpec.UpstreamProxy accepts
-             *     (outbound:<id>, pool:<id>, chain:<id>, a bare id, or "direct"), minus
-             *     "access" — that form resolves the access pool of the pools a
-             *     *provider* feeds, and a static outbound feeds none. The engine
-             *     resolves the reference at dial time against live config and injects
-             *     the dialer into the plugin's config map under
+             *     (outbound:<id>, pool:<id>, chain:<id>, a bare id, or "direct"). The
+             *     engine resolves the reference at dial time against live config and
+             *     injects the dialer into the plugin's config map under
              *     pkg/plugin.UpstreamDialerKey; outbound plugins that support an
              *     upstream (http, socks5, mihomo-*, singbox-*) reach their server
              *     through it, composing with the engine stack: the route's own first
@@ -2042,19 +1994,18 @@ export type components = {
             upstream_proxy?: string;
         };
         "config.Pool": {
-            /**
-             * @description Access, when set, turns the pool into an auto-chained pool: the engine
-             *     probes each member's server for direct reachability from the local
-             *     network; members the local ISP cannot reach are dialed through an
-             *     access proxy from Access.AccessPoolID (a relay hop is prepended
-             *     automatically), and members reachable neither directly nor through the
-             *     access pool are dropped from the pool's candidates.
-             */
-            access?: components["schemas"]["config.AccessFilterSpec"];
             filters?: components["schemas"]["config.FilterSpec"][];
             id?: string;
             outbound_ids?: string[];
             selector?: components["schemas"]["config.SelectorSpec"];
+        };
+        "config.ProbeConfig": {
+            /** @description Enabled turns scheduled probes on. Default false. */
+            enabled?: boolean;
+            /** @description IntervalSec is seconds between probe rounds. Default 300; minimum 10. */
+            interval_seconds?: number;
+            /** @description TimeoutSec bounds each probe dial. Default 5; minimum 1. */
+            timeout_seconds?: number;
         };
         "config.ProviderSpec": {
             /** @description Config is the plugin-specific provider configuration. */
@@ -2077,23 +2028,18 @@ export type components = {
              *         that id exists, else as an outbound (same precedence as chain
              *         layers), so "pool:<id>" and "outbound:<id>" pin the meaning
              *       - "pool:<id>":      pick an outbound from a pool (its selector, with
-             *         failover across members; the pool's access filter applies, so
-             *         members the local network cannot reach are dialed through the
-             *         pool's access proxies)
+             *         failover across members; candidates the local network cannot
+             *         reach are dropped by the measured reachability verdicts)
              *       - "chain:<id>":     traverse a named chain layer by layer (real
              *         multi-hop semantics: hop i CONNECTs toward hop i+1's server, the
              *         last hop toward the fetch target)
-             *       - "access":         dial the fetch target directly first, and fall
-             *         back to the access pool of the pools this provider feeds (the
-             *         same direct-vs-relay testing the access filter does for pool
-             *         members) when the local network cannot reach it
              *       - "direct":         always dial directly (explicit no-op form)
              *
              *     The engine resolves the reference at dial time against live config, so
-             *     pool membership and access-pool changes apply without restarting the
-             *     provider; editing the reference itself restarts it. The resolved dialer
-             *     is injected into the provider's config map for plugins that support
-             *     routed fetches (see pkg/plugin.UpstreamDialer).
+             *     pool membership changes apply without restarting the provider; editing
+             *     the reference itself restarts it. The resolved dialer is injected into
+             *     the provider's config map for plugins that support routed fetches (see
+             *     pkg/plugin.UpstreamDialer).
              */
             upstream_proxy?: string;
         };
@@ -2133,24 +2079,6 @@ export type components = {
         };
         /** @enum {string} */
         "core.Network": "tcp" | "udp" | "tcp" | "udp";
-        "core.ProbeStatus": {
-            address?: string;
-            direct?: components["schemas"]["core.ProbeVerdict"];
-            outboundID?: string;
-            poolID?: string;
-            relay?: components["schemas"]["core.ProbeVerdict"];
-            relayVia?: string;
-        };
-        "core.ProbeVerdict": {
-            /** @description At is when the probe ran. */
-            at?: string;
-            /** @description Error is the dial error when OK is false. */
-            error?: string;
-            /** @description Latency is how long the dial took. */
-            latency?: components["schemas"]["time.Duration"];
-            /** @description OK reports whether the dial succeeded. */
-            ok?: boolean;
-        };
         "core.RequestMetric": {
             chain?: string[];
             error?: string;

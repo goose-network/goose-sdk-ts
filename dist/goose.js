@@ -136,7 +136,10 @@ export class Goose {
     }
     // --- metrics ---
     /**
-     * List recent request metrics, newest first.
+     * List recent outbound metrics, newest first: one row per measured path —
+     * single-hop requests, chain requests, and local reachability probes
+     * (chain `["local", <outbound>]`, recorded when engine probes are
+     * enabled).
      *
      * @param n how many records to return; the engine defaults to 100 and
      *        caps at 10000.
@@ -160,10 +163,6 @@ export class Goose {
     /** Start one exit-IP check round now (background). */
     runExitChecks() {
         return this.client.send("POST", "/api/exit-checks/run", undefined);
-    }
-    /** List the latest auto-chain reachability probes. */
-    listChainProbes() {
-        return this.client.get("/api/chains/probes");
     }
     /**
      * List the live provider observability view: lifecycle state and poll

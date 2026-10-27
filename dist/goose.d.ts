@@ -1,6 +1,6 @@
 import type { components } from "./schema.js";
 import { GooseClient } from "./client.js";
-import type { ChainSpec, Engine, ExitCheck, Inbound, OutboundSpec, Pool, ProbeStatus, ProviderStatus, ProviderSpec, RequestMetric } from "./types.js";
+import type { ChainSpec, Engine, ExitCheck, Inbound, OutboundSpec, Pool, ProviderStatus, ProviderSpec, RequestMetric } from "./types.js";
 type EngineConfig = components["schemas"]["config.Engine"];
 /** Typed client for the goose admin API. */
 export declare class Goose {
@@ -66,7 +66,10 @@ export declare class Goose {
     /** Delete a provider. Returns false when the id did not exist (404). */
     deleteProvider(id: string): Promise<boolean>;
     /**
-     * List recent request metrics, newest first.
+     * List recent outbound metrics, newest first: one row per measured path —
+     * single-hop requests, chain requests, and local reachability probes
+     * (chain `["local", <outbound>]`, recorded when engine probes are
+     * enabled).
      *
      * @param n how many records to return; the engine defaults to 100 and
      *        caps at 10000.
@@ -79,8 +82,6 @@ export declare class Goose {
     }): Promise<ExitCheck[]>;
     /** Start one exit-IP check round now (background). */
     runExitChecks(): Promise<void>;
-    /** List the latest auto-chain reachability probes. */
-    listChainProbes(): Promise<ProbeStatus[]>;
     /**
      * List the live provider observability view: lifecycle state and poll
      * results for every dynamic outbound provider the engine tracks, plus
