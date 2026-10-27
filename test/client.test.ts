@@ -201,22 +201,28 @@ describe("Goose SDK", () => {
     await goose.runExitChecks();
   });
 
-  it("lists chain probes", async () => {
+  it("lists reachability probe rows through metrics", async () => {
     const goose = newGoose({
-      "GET /api/chains/probes": [200, [
+      "GET /api/metrics": [200, [
         {
-          outboundID: "ob1",
-          address: "1.2.3.4:1080",
-          poolID: "work",
-          direct: { ok: false, error: "blocked", at: "2026-10-24T00:00:00Z" },
-          relay: { ok: true, latency: 40000000, at: "2026-10-24T00:00:00Z" },
-          relayVia: "access1",
+          id: "m1",
+          inboundID: "",
+          user: "",
+          network: "tcp",
+          target: "1.2.3.4:1080",
+          chain: ["local", "ob1"],
+          success: false,
+          error: "dial tcp 1.2.3.4:1080: i/o timeout",
+          latency: 5000000000,
+          startedAt: "2026-10-27T00:00:00Z",
+          finishedAt: "2026-10-27T00:00:05Z",
         },
       ]],
     });
-    const probes = await goose.listChainProbes();
-    expect(probes.length).toBe(1);
-    expect(probes[0]?.relayVia).toBe("access1");
-    expect(probes[0]?.direct?.ok).toBe(false);
+    const rows = await goose.listMetrics();
+    expect(rows.length).toBe(1);
+    expect(rows[0]?.chain).toEqual(["local", "ob1"]);
+    expect(rows[0]?.target).toBe("1.2.3.4:1080");
+    expect(rows[0]?.success).toBe(false);
   });
 });
