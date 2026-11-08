@@ -442,8 +442,8 @@ export type paths = {
         get?: never;
         put?: never;
         /**
-         * Trigger an exit-IP check round now
-         * @description Starts one exit-IP check round immediately (background); results appear in GET /api/exit-checks as they complete. Uses the engine's exit-check site list, timeout, and concurrency. Scheduling (cron/interval) is unaffected.
+         * Run an exit-IP check round now
+         * @description Runs one exit-IP check round immediately and returns its records, without touching the cron schedule — a single-run task needs no schedule enabled. The body is optional and overrides the engine's exit-check config per field: sites (check-site URLs), outbounds (restrict the round to these ids), timeout_seconds and concurrency. An empty body runs the configured round. Answers 200 with the records when the round finishes within 25s, else 202 while it completes in the background (results then appear in GET /api/exit-checks).
          */
         post: {
             parameters: {
@@ -452,15 +452,38 @@ export type paths = {
                 path?: never;
                 cookie?: never;
             };
-            requestBody?: never;
+            /** @description Overrides for this run; omit to use the engine's exit-check config */
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["exitip.RunSpec"];
+                };
+            };
             responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.exitRunResponse"];
+                    };
+                };
                 /** @description Accepted */
                 202: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "*/*": components["schemas"]["api.errResponse"];
+                        "application/json": components["schemas"]["api.exitRunResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
                     };
                 };
                 /** @description Unauthorized */
@@ -469,7 +492,16 @@ export type paths = {
                         [name: string]: unknown;
                     };
                     content: {
-                        "*/*": components["schemas"]["api.errResponse"];
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Method Not Allowed */
+                405: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
                     };
                 };
                 /** @description Service Unavailable */
@@ -478,7 +510,7 @@ export type paths = {
                         [name: string]: unknown;
                     };
                     content: {
-                        "*/*": components["schemas"]["api.errResponse"];
+                        "application/json": components["schemas"]["api.errResponse"];
                     };
                 };
             };
@@ -1491,6 +1523,157 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/probes/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List recent HTTP probe results
+         * @description Returns up to n recent HTTP probe records, newest first: for each (target, route) pair the response status, headers, body (capped, with truncated set when it was), latency, and time. Both manual runs and scheduled rounds land here. Optionally filtered to one route reference.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Number of records to return (default 100, max 10000) */
+                    n?: number;
+                    /** @description Only results for this route reference (e.g. outbound:us-1, pool:default) */
+                    route?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["core.HTTPProbe"][];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Method Not Allowed */
+                405: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/probes/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run an HTTP reachability probe round now
+         * @description Issues one HTTP request toward each target through each route and returns every response (status, headers, body, latency), one record per (target, route) pair. A TCP dial probe only proves a proxy server answers; this proves the route actually proxies. Routes take the same reference forms as upstream_proxy and chain layers — "outbound:<id>", "pool:<id>", "chain:<id>", a bare id, or "direct" — and an empty list probes every built outbound. Per-request failures are results, not errors: an undialable route is exactly what a probe is for. Each result is also persisted (GET /api/probes/results) and recorded as a metric row whose chain starts with "probe". Records are informational only — they never change the reachability verdicts routing filters on, because an HTTP probe can fail for the target's sake while the route is fine.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description The probe round to run */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["api.probeRunRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["core.HTTPProbe"][];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Method Not Allowed */
+                405: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Service Unavailable */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/providers": {
         parameters: {
             query?: never;
@@ -1870,6 +2053,47 @@ export type components = {
              */
             error?: string;
         };
+        "api.exitRunResponse": {
+            /** @description Checks are the round's records, present only when status is complete. */
+            checks?: components["schemas"]["core.ExitCheck"][];
+            /** @description Message explains an accepted round. */
+            message?: string;
+            /**
+             * @description Status is "complete" when the round finished within the wait window —
+             *     checks then holds its records — or "accepted" when it is still running
+             *     and its results will land in GET /api/exit-checks.
+             * @example complete
+             */
+            status?: string;
+        };
+        "api.probeRunRequest": {
+            /** @description Body is the request body, sent verbatim. */
+            body?: string;
+            /**
+             * @description Headers are added to every request. Host and Content-Length are the
+             *     transport's to set; a User-Agent is supplied when none is given.
+             */
+            headers?: {
+                [key: string]: string;
+            };
+            /**
+             * @description MaxBodyBytes caps how much of each response body is kept. Default 4096;
+             *     capped at 1 MiB.
+             */
+            max_body_bytes?: number;
+            /** @description Method is the HTTP method; empty means GET. */
+            method?: string;
+            /**
+             * @description Routes are the route references to probe through ("outbound:<id>",
+             *     "pool:<id>", "chain:<id>", a bare id, or "direct"); empty probes every
+             *     built outbound.
+             */
+            routes?: string[];
+            /** @description Targets are the absolute http(s) URLs to request. Required. */
+            targets?: string[];
+            /** @description TimeoutSec bounds one request. Default 15; capped at 300. */
+            timeout_seconds?: number;
+        };
         "config.APIConfig": {
             listen?: string;
             /** @description Token is the bearer token for admin auth; empty disables auth. */
@@ -1944,6 +2168,34 @@ export type components = {
             /** @description Type is "mmdb", "qqwry", "zxinc" or "" (disabled). */
             type?: string;
         };
+        "config.HTTPProbeConfig": {
+            /** @description Body is the request body, sent verbatim. */
+            body?: string;
+            /**
+             * @description Headers are added to every request. A User-Agent is supplied when none
+             *     is given; Host and Content-Length are the transport's to set.
+             */
+            headers?: {
+                [key: string]: string;
+            };
+            /** @description MaxBodyBytes caps the response body kept for assertions. Default 4096. */
+            max_body_bytes?: number;
+            /** @description Method is the HTTP method; empty means GET. */
+            method?: string;
+            /**
+             * @description Routes are the route references to probe through — "outbound:<id>",
+             *     "pool:<id>", "chain:<id>", a bare id, or "direct". Empty probes every
+             *     built outbound.
+             */
+            routes?: string[];
+            /**
+             * @description Targets are absolute http(s) URLs to request. Required: an HTTP probe
+             *     config with no targets is ignored.
+             */
+            targets?: string[];
+            /** @description TimeoutSec bounds one request. Default 15; minimum 1. */
+            timeout_seconds?: number;
+        };
         "config.Inbound": {
             id?: string;
             /** @description host:port */
@@ -2007,6 +2259,14 @@ export type components = {
         "config.ProbeConfig": {
             /** @description Enabled turns scheduled probes on. Default false. */
             enabled?: boolean;
+            /**
+             * @description HTTP adds a scheduled application-level probe to every round: the
+             *     engine issues this request toward each target through each route and
+             *     records the response (status, headers, body) plus a metric row. A TCP
+             *     dial only proves the server answers; an HTTP probe proves the route
+             *     actually proxies. Nil (the default) keeps rounds to TCP dials.
+             */
+            http?: components["schemas"]["config.HTTPProbeConfig"];
             /** @description IntervalSec is seconds between probe rounds. Default 300; minimum 10. */
             interval_seconds?: number;
             /** @description TimeoutSec bounds each probe dial. Default 5; minimum 1. */
@@ -2082,6 +2342,32 @@ export type components = {
             startedAt?: string;
             success?: boolean;
         };
+        "core.HTTPProbe": {
+            /** @description Body is the response body, capped at the probe's MaxBodyBytes. */
+            body?: string;
+            error?: string;
+            /**
+             * @description Headers are the response headers, one value per name; a repeated
+             *     header's values are joined with ", ".
+             */
+            headers?: {
+                [key: string]: string;
+            };
+            id?: string;
+            latency?: components["schemas"]["time.Duration"];
+            method?: string;
+            route?: string;
+            startedAt?: string;
+            /** @description Status is the HTTP response status, or 0 when no response arrived. */
+            status?: number;
+            success?: boolean;
+            target?: string;
+            /**
+             * @description Truncated reports that the body was capped, so a regex over it may
+             *     miss a match that a full download would have found.
+             */
+            truncated?: boolean;
+        };
         /** @enum {string} */
         "core.Network": "tcp" | "udp" | "tcp" | "udp";
         "core.RequestMetric": {
@@ -2096,6 +2382,22 @@ export type components = {
             success?: boolean;
             target?: string;
             user?: string;
+        };
+        "exitip.RunSpec": {
+            /** @description Concurrency caps parallel checks; zero uses the config's. */
+            concurrency?: number;
+            /**
+             * @description Outbounds restricts the run to these outbound ids; empty checks every
+             *     address-bearing outbound.
+             */
+            outbounds?: string[];
+            /**
+             * @description Sites are the check-site URLs to ask for this run; empty uses the
+             *     config's list (or the built-in defaults when that is empty too).
+             */
+            sites?: string[];
+            /** @description TimeoutSec bounds one site request; zero uses the config's. */
+            timeout_seconds?: number;
         };
         "github_com_goose-network_goose_pkg_plugin.ProviderStatus": {
             /**
