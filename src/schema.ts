@@ -844,7 +844,7 @@ export type paths = {
         };
         /**
          * List recent outbound metrics
-         * @description Returns up to n recent outbound metric rows, newest first, each carrying the path that produced it: a proxied request's chain, or a reachability probe row whose chain starts with "local" (the engine's own network dialing an outbound's server). Failed rows carry a reason slug classifying the failure (dns_timeout, connect_refused, proxy_auth, proxy_timeout, tunnel_unavailable, tls_handshake, tls_cert, header_timeout, body_timeout, timeout, reset_eof, unknown, ...) alongside the full error string; rows recorded before classification existed have none. n defaults to 100; values above 10000 are capped; invalid values fall back to the default.
+         * @description Returns up to n recent outbound metric rows, newest first, each carrying the path that produced it: a proxied request's chain, or a reachability probe row whose chain starts with "local" (the engine's own network dialing an outbound's server). Failed rows carry a reason slug classifying the failure (dns_timeout, connect_refused, proxy_auth, proxy_timeout, tunnel_unavailable, tls_handshake, tls_cert, header_timeout, body_timeout, timeout, reset_eof, unknown, ...) alongside the full error string; rows recorded before classification existed have none. Rows recorded by an engine that observes the path also carry "path": the network path the request actually took, as an adjacency list. Node ids are "local" (the engine host), "proxy:<outboundID>" for each proxy server dialed ("proxy:<outboundID>#<n>" for the n-th failover attempt), "server:<host:port>" — kind "proxy", no outboundID — for a server reached with no outbound behind it (an upstream route resolving to direct), and "target" (the destination). A proxy node's address carries its addressSource: "socket" for the peer read off the connection the leg itself produced, "configured" for the address the config claims (a proxy may sit in front of it); a server whose dial failed keeps the configured one. Edges are the observed legs with their own outcome and, on failure, phase and reason. "observed" is true on every leg an engine recorded — false is reserved for a producer outside the engine that synthesizes a path from configuration; "collapsed" marks a chained hop that threw the previous tunnel away and re-dialed from the engine host; a leg that was not separately timed omits "duration" entirely (the key is absent — it never serializes as 0), which is not the same as instantaneous. Graph-level honesty: "partial" means legs may be missing (a plugin dialed where the engine could not see) and "dropped" counts the nodes a cap cut. Per-attempt edges appear only where a pool failover loop actually runs — an outbound's upstream_proxy pool route, or a probe's pool route; chain-layer dispatch, which most request rows ride, picks one member per layer and does not fail over. The "path" key is absent on rows an engine that predates path observation recorded. n defaults to 100; values above 10000 are capped; invalid values fall back to the default.
          */
         get: {
             parameters: {
@@ -1532,7 +1532,7 @@ export type paths = {
         };
         /**
          * List recent HTTP probe results
-         * @description Returns up to n recent HTTP probe records, newest first: for each (target, route) pair the response status, headers, body (capped, with truncated set when it was), latency, and time. Failed records also carry phase and reason: phase says which leg failed — "dns"/"connect" are the local→proxy-server leg, "proxy" is the proxy's handshake, "tls"/"headers"/"body" are beyond the proxy toward the target — and reason is a stable slug (dns_timeout, connect_refused, proxy_auth, proxy_timeout, tunnel_unavailable, tls_handshake, tls_cert, header_timeout, body_timeout, reset_eof, ...). dialAddr is the address the first hop actually connected to (the proxy server for a proxy route), dialVia the outbound a pool or chain route picked, and routeDial/dns/connect/tls/ttfb the per-phase timings (zero where a phase was not observable, e.g. under gvisor or a tunnel protocol). Both manual runs and scheduled rounds land here. Optionally filtered to one route reference.
+         * @description Returns up to n recent HTTP probe records, newest first: for each (target, route) pair the response status, headers, body (capped, with truncated set when it was), latency, and time. Failed records also carry phase and reason: phase says which leg failed — "dns"/"connect" are the local→proxy-server leg, "proxy" is the proxy's handshake, "tls"/"headers"/"body" are beyond the proxy toward the target — and reason is a stable slug (dns_timeout, connect_refused, proxy_auth, proxy_timeout, tunnel_unavailable, tls_handshake, tls_cert, header_timeout, body_timeout, reset_eof, ...). dialAddr is the address the first hop actually connected to (the proxy server for a proxy route), dialVia the outbound a pool or chain route picked, and routeDial/dns/connect/tls/ttfb the per-phase timings (zero where a phase was not observable, e.g. under gvisor or a tunnel protocol). Each record also carries "path": the observed network path as an adjacency list. Node ids are "local" (the engine host), "proxy:<outboundID>" for each proxy server dialed ("proxy:<outboundID>#<n>" for the n-th failover attempt), "server:<host:port>" — kind "proxy", no outboundID — for a server reached with no outbound behind it (an upstream route resolving to direct), and "target" (the destination). A proxy node's address carries its addressSource: "socket" for the peer read off the connection the leg itself produced, "configured" for the address the config claims (a proxy may sit in front of it); a server whose dial failed keeps the configured one. Edges are the observed legs with their own outcome and, on failure, phase and reason. "observed" is true on every leg an engine recorded — false is reserved for a producer outside the engine that synthesizes a path from configuration; "collapsed" marks a chained hop that threw the previous tunnel away and re-dialed from the engine host; a leg that was not separately timed omits "duration" entirely (the key is absent — it never serializes as 0), which is not the same as instantaneous. Graph-level honesty: "partial" means legs may be missing (a plugin dialed where the engine could not see) and "dropped" counts the nodes a cap cut. A "pool:" route runs a real failover loop and records one edge per attempt, keeping each failed member's error and classification, with the winner marked by the edge that succeeded onward to the target. The "path" key is absent on records an engine that predates path observation recorded. Both manual runs and scheduled rounds land here. Optionally filtered to one route reference.
          */
         get: {
             parameters: {
@@ -1605,7 +1605,7 @@ export type paths = {
         put?: never;
         /**
          * Run an HTTP reachability probe round now
-         * @description Issues one HTTP request toward each target through each route and returns every response (status, headers, body, latency), one record per (target, route) pair. A TCP dial probe only proves a proxy server answers; this proves the route actually proxies. Routes take the same reference forms as upstream_proxy and chain layers — "outbound:<id>", "pool:<id>", "chain:<id>", a bare id, or "direct" — and an empty list probes every built outbound. Per-request failures are results, not errors: an undialable route is exactly what a probe is for. Failed results classify the failure: phase names the leg that failed ("dns"/"connect" = local→proxy-server, "proxy" = the proxy's handshake, "tls"/"headers"/"body" = proxy→target) and reason is a stable slug (dns_timeout, connect_refused, proxy_auth, header_timeout, body_timeout, ...); the phase timings routeDial/dns/connect/tls/ttfb show where the time went, and dialAddr/dialVia report the first-hop address and the outbound a pool or chain route picked. Each result is also persisted (GET /api/probes/results) and recorded as a metric row whose chain starts with "probe". Records are informational only — they never change the reachability verdicts routing filters on, because an HTTP probe can fail for the target's sake while the route is fine.
+         * @description Issues one HTTP request toward each target through each route and returns every response (status, headers, body, latency), one record per (target, route) pair. A TCP dial probe only proves a proxy server answers; this proves the route actually proxies. Routes take the same reference forms as upstream_proxy and chain layers — "outbound:<id>", "pool:<id>", "chain:<id>", a bare id, or "direct" — and an empty list probes every built outbound. Per-request failures are results, not errors: an undialable route is exactly what a probe is for. Failed results classify the failure: phase names the leg that failed ("dns"/"connect" = local→proxy-server, "proxy" = the proxy's handshake, "tls"/"headers"/"body" = proxy→target) and reason is a stable slug (dns_timeout, connect_refused, proxy_auth, header_timeout, body_timeout, ...); the phase timings routeDial/dns/connect/tls/ttfb show where the time went, and dialAddr/dialVia report the first-hop address and the outbound a pool or chain route picked. Each result also carries "path": the network path the probe actually took as an adjacency list. Node ids are "local" (the engine host), "proxy:<outboundID>" for each proxy server dialed ("proxy:<outboundID>#<n>" for the n-th failover attempt), "server:<host:port>" — kind "proxy", no outboundID — for a server reached with no outbound behind it (an upstream route resolving to direct), and "target" (the destination). A proxy node's address carries its addressSource: "socket" for the peer read off the connection the leg itself produced, "configured" for the address the config claims (a proxy may sit in front of it); a server whose dial failed keeps the configured one. Edges are the observed legs with their own outcome and, on failure, phase and reason. "observed" is true on every leg an engine recorded — false is reserved for a producer outside the engine that synthesizes a path from configuration; "collapsed" marks a chained hop that threw the previous tunnel away and re-dialed from the engine host; a leg that was not separately timed omits "duration" entirely (the key is absent — it never serializes as 0), which is not the same as instantaneous. Graph-level honesty: "partial" means legs may be missing (a plugin dialed where the engine could not see) and "dropped" counts the nodes a cap cut. A direct route's path is a single stack leg local→target; a "pool:" route runs a real failover loop and records one edge per attempt, keeping each failed member's error, with the winner marked by the edge that succeeded onward to the target. Each result is also persisted (GET /api/probes/results) and recorded as a metric row whose chain starts with "probe". Records are informational only — they never change the reachability verdicts routing filters on, because an HTTP probe can fail for the target's sake while the route is fine.
          */
         post: {
             parameters: {
@@ -2330,6 +2330,8 @@ export type components = {
             policy?: components["schemas"]["config.InboundPolicy"];
             username?: string;
         };
+        /** @enum {string} */
+        "core.AddrSource": "socket" | "configured";
         "core.ExitCheck": {
             error?: string;
             exitIP?: string;
@@ -2377,6 +2379,17 @@ export type components = {
             latency?: components["schemas"]["time.Duration"];
             method?: string;
             /**
+             * @description Path is the observed network path of this probe's route, as an adjacency
+             *     list: the engine host, each proxy server the route actually rode and the
+             *     target as nodes, one edge per observed leg with that leg's own span and
+             *     outcome. Unlike the row's Phase — which names where the whole request
+             *     broke — the graph names the leg that broke. A route with no proxy at all
+             *     ("direct") yields local → target with no proxy node between them. Absent
+             *     on rows recorded before path observation existed and on a job the round's
+             *     budget cancelled before it was issued.
+             */
+            path?: components["schemas"]["core.PathGraph"];
+            /**
              * @description Phase locates a failure along the request path: "dns" and "connect"
              *     are the local→proxy-server leg (for a direct route, local→target),
              *     "proxy" is the proxy's own handshake or relay setup after its TCP
@@ -2422,7 +2435,111 @@ export type components = {
             ttfb?: components["schemas"]["time.Duration"];
         };
         /** @enum {string} */
+        "core.LegKind": "dial" | "tunnel" | "stack";
+        /** @enum {string} */
         "core.Network": "tcp" | "udp" | "tcp" | "udp";
+        /** @enum {string} */
+        "core.NodeKind": "local" | "proxy" | "target";
+        "core.PathEdge": {
+            /**
+             * @description Collapsed is true when a chained hop could not be dialed through the
+             *     previous conn and re-dialed from the local network instead, dropping
+             *     the hop before it.
+             */
+            collapsed?: boolean;
+            /**
+             * @description Duration is this leg's own span. For a LegDial edge arriving at a proxy
+             *     node it spans the whole hop dial — the server connect plus the proxy's
+             *     handshake toward the next node — because a plugin performs both inside
+             *     one call; that is the same span core.HTTPProbe.RouteDial documents. A leg
+             *     that was not separately timed OMITS this field: the JSON key is absent, so
+             *     a consumer reads absent as "not separately timed", never as "instant"
+             *     (the in-memory Go value is 0 in that case, and omitempty keeps it off the
+             *     wire).
+             */
+            duration?: components["schemas"]["time.Duration"];
+            error?: string;
+            /**
+             * @description From and To are node IDs. From is never empty: the local node's ID is
+             *     written out so an edge list reads on its own.
+             */
+            from?: string;
+            /**
+             * @description Kind is one of LegDial, LegTunnel, LegStack. It is persisted exactly as
+             *     the producer labelled it: only the producer knows what the leg did, so
+             *     the recorder never reclassifies one from what a call returned.
+             */
+            kind?: components["schemas"]["core.LegKind"];
+            /**
+             * @description Observed is true on every leg the engine recorded: an engine-recorded
+             *     leg was bracketed by definition, and a leg the engine could not bracket
+             *     is not emitted at all — the graph says so through Partial instead. The
+             *     field exists for a producer outside the engine that synthesizes a path
+             *     from configuration; no engine code path writes false.
+             */
+            observed?: boolean;
+            /**
+             * @description Phase and Reason classify a failed leg with the same vocabulary
+             *     core.HTTPProbe uses, bounded to what this leg could have reached.
+             */
+            phase?: string;
+            reason?: string;
+            success?: boolean;
+            /** @description Target is the dial string handed to this leg (host:port). */
+            target?: string;
+            to?: string;
+        };
+        "core.PathGraph": {
+            /** @description Dropped counts the nodes a cap cut. */
+            dropped?: number;
+            /** @description Edges is in observation order. */
+            edges?: components["schemas"]["core.PathEdge"][];
+            /** @description Nodes is in path order: local first, proxies in dial order, target last. */
+            nodes?: components["schemas"]["core.PathNode"][];
+            /**
+             * @description Partial is true when the graph may be missing legs: a plugin dialed
+             *     where the engine could not see, or a cap dropped an attempt. It does
+             *     NOT mean "some leg is untimed" — that is every successful hop.
+             */
+            partial?: boolean;
+        };
+        "core.PathNode": {
+            /**
+             * @description Address is host:port, empty when it was not observable (a tunnel
+             *     protocol whose shape is not a dialable address).
+             */
+            address?: string;
+            /**
+             * @description AddressSource says how Address was learned; omitted when Address is
+             *     empty.
+             */
+            addressSource?: components["schemas"]["core.AddrSource"];
+            /**
+             * @description Attempt is the 1-based failover attempt that produced this proxy node;
+             *     0 when the node was not one of several attempts.
+             */
+            attempt?: number;
+            /**
+             * @description Host and Port are the requested destination, on the target node only.
+             *     Address may differ from them: a dial resolves the name, and the socket
+             *     peer the engine adopted is the resolved one.
+             */
+            host?: string;
+            /**
+             * @description ID is unique within the graph: "local", "target", "proxy:<outboundID>",
+             *     "proxy:<outboundID>#<n>" for a repeat, or "server:<host:port>" for a
+             *     server reached with no outbound behind it.
+             */
+            id?: string;
+            /** @description Kind is one of NodeLocal, NodeProxy, NodeTarget. */
+            kind?: components["schemas"]["core.NodeKind"];
+            /**
+             * @description OutboundID names the engine outbound this proxy server is; empty for
+             *     local and target nodes and for a server node no outbound was named for.
+             */
+            outboundID?: string;
+            port?: string;
+        };
         "core.RequestMetric": {
             chain?: string[];
             error?: string;
@@ -2431,6 +2548,17 @@ export type components = {
             inboundID?: string;
             latency?: components["schemas"]["time.Duration"];
             network?: components["schemas"]["core.Network"];
+            /**
+             * @description Path is the observed network path as an adjacency list: the engine host,
+             *     each proxy server the request actually rode (with the address it was
+             *     reached at, and whether that came off the socket or the config), and the
+             *     target as nodes, with one edge per observed leg carrying that leg's own
+             *     span, outcome and classification. A pool failover records one edge per
+             *     attempt, so the members that failed keep their own errors and the winner
+             *     is the attempt whose leg succeeded. Absent on rows recorded before path
+             *     observation existed and on rows whose path could not be observed at all.
+             */
+            path?: components["schemas"]["core.PathGraph"];
             /**
              * @description Reason is a stable slug classifying the failure (dns_timeout,
              *     connect_refused, tls_handshake, header_timeout, body_timeout, ...),
