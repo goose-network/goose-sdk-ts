@@ -326,7 +326,7 @@ export type paths = {
         };
         /**
          * Get engine configuration
-         * @description Returns the engine-level configuration: network stack selection, admin API settings, metrics DB path and offline geo database settings.
+         * @description Returns the engine-level configuration as stored: network stack selection, admin API settings, metrics DB path, offline geo database settings and durable log settings (rotating file, per-file size and total storage budget). The stored log budget is returned verbatim; the effective total is clamped to a hard cap of 1 GB at apply time.
          */
         get: {
             parameters: {
@@ -357,7 +357,53 @@ export type paths = {
                 };
             };
         };
-        put?: never;
+        /**
+         * Update engine configuration
+         * @description Replaces the engine-level configuration (network stack, admin API settings, metrics DB path, geo database, log file settings). The stack must be one of "system" or "gvisor" (or empty). Log settings apply live: the rotating log writer reopens on the next config version bump, and the effective total log budget is clamped to a hard cap of 1000 MB (1 GB) regardless of what is sent. Negative log sizes and a log.file pointing at the metrics database or the persisted config file are rejected with 400. Changes are applied live: the engine reconciles listeners on the next config version bump.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Engine configuration */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["config.Engine"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["config.Engine"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+            };
+        };
         post?: never;
         delete?: never;
         options?: never;
@@ -2132,6 +2178,16 @@ export type components = {
             /** @description Geo is the offline IP database config. */
             geo?: components["schemas"]["config.GeoConfig"];
             /**
+             * @description Log configures durable engine logging: the standard logger's records
+             *     (the engine and every linked plugin that logs through it) are copied
+             *     to a rotating file whose total storage — active file plus retained
+             *     rotations — never exceeds the budget. Zero value keeps stderr-only
+             *     logging at the engine level; the goose binary resolves an empty File
+             *     to logs/goose.log beside the persisted config so the shipped engine
+             *     bounds its own log storage by default.
+             */
+            log?: components["schemas"]["config.LogConfig"];
+            /**
              * @description Probes configures scheduled reachability probes: the engine dials each
              *     outbound's proxy server from the local network and records the outcome
              *     as an outbound metric row (first hop "local"), so routing narrows a
@@ -2242,6 +2298,27 @@ export type components = {
              *     named chain. Ignored when ChainID or OutboundID is set.
              */
             pool_id?: string;
+        };
+        "config.LogConfig": {
+            /**
+             * @description File is the active log file path. Empty means no file logging at the
+             *     engine level; the goose binary resolves it at startup to
+             *     logs/goose.log beside the persisted config. "-" explicitly disables
+             *     file logging and survives restarts.
+             */
+            file?: string;
+            /**
+             * @description MaxSizeMB rotates the active file once it reaches this many MB
+             *     (default 32). Clamped to MaxTotalMB.
+             */
+            max_size_mb?: number;
+            /**
+             * @description MaxTotalMB is the total byte budget across the active file and all
+             *     retained rotations (default 1000). Values above the 1 GB hard cap
+             *     are clamped down to it; pre-existing files in the log directory left
+             *     by earlier runs count toward the budget and are pruned at startup.
+             */
+            max_total_mb?: number;
         };
         "config.OutboundSpec": {
             config?: {
