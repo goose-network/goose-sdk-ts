@@ -19,7 +19,7 @@ export type paths = {
          * Delete a chain
          * @description Returns all configured proxy chains (ordered lists of pool layers).
          *     Returns the chain with the given id.
-         *     Creates (or replaces) a proxy chain: an ordered list of layers, each referencing a pool (which carries its own filters + selector) or a single outbound server (pinned for that hop; when an id matches both, the pool wins). Layer 0 is the first hop; each subsequent layer is dialed through the previous.
+         *     Creates (or replaces) a proxy chain: an ordered list of layers, each referencing a pool (which carries its own filters + selector) or a single outbound server (pinned for that hop; when an id matches both, the pool wins). Layer 0 is the first hop; each subsequent layer is dialed through the previous. A layer may not reference a pool that has chain members (path-pool).
          *     Removes the chain with the given id. Inbounds whose policy still references it will fail to resolve until reconfigured.
          */
         get: {
@@ -90,7 +90,7 @@ export type paths = {
          * Delete a chain
          * @description Returns all configured proxy chains (ordered lists of pool layers).
          *     Returns the chain with the given id.
-         *     Creates (or replaces) a proxy chain: an ordered list of layers, each referencing a pool (which carries its own filters + selector) or a single outbound server (pinned for that hop; when an id matches both, the pool wins). Layer 0 is the first hop; each subsequent layer is dialed through the previous.
+         *     Creates (or replaces) a proxy chain: an ordered list of layers, each referencing a pool (which carries its own filters + selector) or a single outbound server (pinned for that hop; when an id matches both, the pool wins). Layer 0 is the first hop; each subsequent layer is dialed through the previous. A layer may not reference a pool that has chain members (path-pool).
          *     Removes the chain with the given id. Inbounds whose policy still references it will fail to resolve until reconfigured.
          */
         post: {
@@ -173,7 +173,7 @@ export type paths = {
          * Delete a chain
          * @description Returns all configured proxy chains (ordered lists of pool layers).
          *     Returns the chain with the given id.
-         *     Creates (or replaces) a proxy chain: an ordered list of layers, each referencing a pool (which carries its own filters + selector) or a single outbound server (pinned for that hop; when an id matches both, the pool wins). Layer 0 is the first hop; each subsequent layer is dialed through the previous.
+         *     Creates (or replaces) a proxy chain: an ordered list of layers, each referencing a pool (which carries its own filters + selector) or a single outbound server (pinned for that hop; when an id matches both, the pool wins). Layer 0 is the first hop; each subsequent layer is dialed through the previous. A layer may not reference a pool that has chain members (path-pool).
          *     Removes the chain with the given id. Inbounds whose policy still references it will fail to resolve until reconfigured.
          */
         get: {
@@ -248,7 +248,7 @@ export type paths = {
          * Delete a chain
          * @description Returns all configured proxy chains (ordered lists of pool layers).
          *     Returns the chain with the given id.
-         *     Creates (or replaces) a proxy chain: an ordered list of layers, each referencing a pool (which carries its own filters + selector) or a single outbound server (pinned for that hop; when an id matches both, the pool wins). Layer 0 is the first hop; each subsequent layer is dialed through the previous.
+         *     Creates (or replaces) a proxy chain: an ordered list of layers, each referencing a pool (which carries its own filters + selector) or a single outbound server (pinned for that hop; when an id matches both, the pool wins). Layer 0 is the first hop; each subsequent layer is dialed through the previous. A layer may not reference a pool that has chain members (path-pool).
          *     Removes the chain with the given id. Inbounds whose policy still references it will fail to resolve until reconfigured.
          */
         delete: {
@@ -1266,7 +1266,7 @@ export type paths = {
          * Delete a pool
          * @description Returns all configured outbound pools (ordered outbound sets with filters + selection strategy).
          *     Returns the pool with the given id.
-         *     Creates (or replaces) a pool: an ordered set of outbound ids plus the filters and selection strategy applied when picking from it.
+         *     Creates (or replaces) a pool: an ordered set of outbound ids plus the filters and selection strategy applied when picking from it. chain_ids adds whole chains as members (selected as one unit, dialed as their pinned hops); every named chain must exist and consist solely of outbound layers that exist and are not shadowed by a pool of the same name (including the pool being written — a member layer naming the pool itself would self-shadow), and member ids must be distinct across outbound_ids and chain_ids. A pool with chain members may not be referenced as a chain layer: the write is refused if an existing chain already references the pool id as a layer (plain pools without chain members remain legal chain layers).
          *     Removes the pool with the given id.
          */
         get: {
@@ -1337,7 +1337,7 @@ export type paths = {
          * Delete a pool
          * @description Returns all configured outbound pools (ordered outbound sets with filters + selection strategy).
          *     Returns the pool with the given id.
-         *     Creates (or replaces) a pool: an ordered set of outbound ids plus the filters and selection strategy applied when picking from it.
+         *     Creates (or replaces) a pool: an ordered set of outbound ids plus the filters and selection strategy applied when picking from it. chain_ids adds whole chains as members (selected as one unit, dialed as their pinned hops); every named chain must exist and consist solely of outbound layers that exist and are not shadowed by a pool of the same name (including the pool being written — a member layer naming the pool itself would self-shadow), and member ids must be distinct across outbound_ids and chain_ids. A pool with chain members may not be referenced as a chain layer: the write is refused if an existing chain already references the pool id as a layer (plain pools without chain members remain legal chain layers).
          *     Removes the pool with the given id.
          */
         post: {
@@ -1420,7 +1420,7 @@ export type paths = {
          * Delete a pool
          * @description Returns all configured outbound pools (ordered outbound sets with filters + selection strategy).
          *     Returns the pool with the given id.
-         *     Creates (or replaces) a pool: an ordered set of outbound ids plus the filters and selection strategy applied when picking from it.
+         *     Creates (or replaces) a pool: an ordered set of outbound ids plus the filters and selection strategy applied when picking from it. chain_ids adds whole chains as members (selected as one unit, dialed as their pinned hops); every named chain must exist and consist solely of outbound layers that exist and are not shadowed by a pool of the same name (including the pool being written — a member layer naming the pool itself would self-shadow), and member ids must be distinct across outbound_ids and chain_ids. A pool with chain members may not be referenced as a chain layer: the write is refused if an existing chain already references the pool id as a layer (plain pools without chain members remain legal chain layers).
          *     Removes the pool with the given id.
          */
         get: {
@@ -1495,7 +1495,7 @@ export type paths = {
          * Delete a pool
          * @description Returns all configured outbound pools (ordered outbound sets with filters + selection strategy).
          *     Returns the pool with the given id.
-         *     Creates (or replaces) a pool: an ordered set of outbound ids plus the filters and selection strategy applied when picking from it.
+         *     Creates (or replaces) a pool: an ordered set of outbound ids plus the filters and selection strategy applied when picking from it. chain_ids adds whole chains as members (selected as one unit, dialed as their pinned hops); every named chain must exist and consist solely of outbound layers that exist and are not shadowed by a pool of the same name (including the pool being written — a member layer naming the pool itself would self-shadow), and member ids must be distinct across outbound_ids and chain_ids. A pool with chain members may not be referenced as a chain layer: the write is refused if an existing chain already references the pool id as a layer (plain pools without chain members remain legal chain layers).
          *     Removes the pool with the given id.
          */
         delete: {
@@ -1851,7 +1851,7 @@ export type paths = {
         put?: never;
         /**
          * Create inbounds from a job's successful paths
-         * @description Turns the job's successful paths into chains + inbounds in the live config: one chain per path (its hops as pinned outbound layers) and one inbound listener routed through it. With no body (or no paths given) the fastest successful path per depth is applied — local→A, local→A→C, local→A→C→E, ...; naming paths explicitly applies exactly those (each must be one of the job's successful paths, at most 64 per call). Every hop must still exist as an outbound and must not be shadowed by a pool of the same name (routing resolves pools first). protocol defaults to socks5, listen_prefix to 127.0.0.1; port names the first port (each further inbound takes the next, and must be bindable), and port 0 picks a free port per inbound. Changes apply live: the engine starts the listeners on the next config version bump.
+         * @description Turns the job's successful paths into chains + inbounds in the live config: one chain per path (its hops as pinned outbound layers) and one inbound listener routed through it. With no body (or no paths given) the fastest successful path per depth is applied — local→A, local→A→C, local→A→C→E, ...; naming paths explicitly applies exactly those (each must be one of the job's successful paths, at most 64 per call). Every hop must still exist as an outbound and must not be shadowed by a pool of the same name (routing resolves pools first); in pool mode pool_id must also not be referenced as a layer by an existing chain (a path-pool cannot be a chain layer). protocol defaults to socks5, listen_prefix to 127.0.0.1; port names the first port (each further inbound takes the next, and must be bindable), and port 0 picks a free port per inbound. mode "pool" instead builds ONE pool load-balancing over the proved paths — every path becomes a member chain (chain_ids), and a single inbound (id = id_prefix) routes through the pool. Pool-mode defaults: ALL successful paths deduped fastest-first (cap 256 members; explicit paths override, same cap), pool_id = "<id_prefix>-pool", selector roundrobin, one port. The response then carries pool_id/inbound_id/listen/protocol/selector at the top level and one results entry per member chain (inbound fields empty). Changes apply live: the engine starts the listeners on the next config version bump.
          */
         post: {
             parameters: {
@@ -1917,6 +1917,110 @@ export type paths = {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/probes/full/{id}/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List a full-probe job's attempt results
+         * @description Returns up to n of one job's durable attempt rows, newest first — every issued attempt, success and failure alike, in the same model as GET /api/probes/results (each row carries full_probe_id linking it to the job and depth, the chain length it probed). Failures carry error, phase and reason plus the partial path; successes the response status and timings. Filters narrow server-side: outcome (success/failed), depth (exact chain length), reason (exact slug), route (exact hop-join "a>b"), hop (an outbound at any position of the route) and last_hop (the route's final outbound). before is a pagination cursor: pass the previous page's last row id to receive only rows strictly older than it. A known job whose rows were pruned or that issued no attempts answers 200 with an empty array; retention is reported by the job snapshot's rows_pruned flag and by comparing the loaded row count against total_attempts. An unknown job answers 404.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Number of rows to return (default 200, max 10000) */
+                    n?: number;
+                    /** @description Row id cursor: only rows strictly older than this id */
+                    before?: string;
+                    /** @description Only rows with this outcome (success or failed) */
+                    outcome?: string;
+                    /** @description Only rows at this exact chain depth (>= 1) */
+                    depth?: number;
+                    /** @description Only rows with this failure reason slug */
+                    reason?: string;
+                    /** @description Only rows with this exact hop-join route (a>b) */
+                    route?: string;
+                    /** @description Only rows whose route contains this outbound at any position */
+                    hop?: string;
+                    /** @description Only rows whose route ends in this outbound */
+                    last_hop?: string;
+                };
+                header?: never;
+                path: {
+                    /** @description Job id */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["core.HTTPProbe"][];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Method Not Allowed */
+                405: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2476,10 +2580,27 @@ export type components = {
             status?: string;
         };
         "api.fullProbeApplyResponse": {
+            /**
+             * @description InboundID is the single generated inbound routed through the pool
+             *     (pool mode only).
+             */
+            inbound_id?: string;
             /** @description JobID is the job the paths came from. */
             job_id?: string;
-            /** @description Results are the generated chain + inbound pairs, one per applied path. */
+            /** @description Listen is that inbound's listen address (pool mode only). */
+            listen?: string;
+            /** @description PoolID is the generated pool (pool mode only). */
+            pool_id?: string;
+            /** @description Protocol is that inbound's listener protocol (pool mode only). */
+            protocol?: string;
+            /**
+             * @description Results are the generated chain + inbound pairs, one per applied path.
+             *     In pool mode each entry names a member chain (InboundID/Listen/Protocol
+             *     are empty — the one listener is described by the fields below).
+             */
             results?: components["schemas"]["core.FullProbeApplyResult"][];
+            /** @description Selector is the pool's selection strategy (pool mode only). */
+            selector?: components["schemas"]["core.FullProbeSelectorSpec"];
         };
         "api.fullProbeRunRequest": {
             /** @description Body is the request body, sent verbatim. */
@@ -2737,6 +2858,14 @@ export type components = {
             upstream_proxy?: string;
         };
         "config.Pool": {
+            /**
+             * @description ChainIDs adds whole chains as selection-time pool members: picking one
+             *     expands into its hops (which must all be pinned outbound layers — no
+             *     pool references). Mixed pools are allowed; member IDs must be distinct
+             *     across OutboundIDs and ChainIDs. A pool with chain members is a
+             *     path-pool: no chain layer may reference it (expansion depth stays 1).
+             */
+            chain_ids?: string[];
             filters?: components["schemas"]["config.FilterSpec"][];
             id?: string;
             outbound_ids?: string[];
@@ -2854,10 +2983,22 @@ export type components = {
              */
             listen_prefix?: string;
             /**
+             * @description Mode selects what apply builds: "" or "inbounds" keeps one inbound
+             *     listener per path (the default); "pool" builds one pool load-balancing
+             *     over the proved paths (each path becomes a member chain) behind a
+             *     single inbound routed through it.
+             */
+            mode?: string;
+            /**
              * @description Paths are the exact hop lists to build, each an ordered list of
              *     outbound IDs. Empty means BestPaths().
              */
             paths?: string[][];
+            /**
+             * @description PoolID names the generated pool in pool mode; empty means
+             *     "<IDPrefix>-pool". Ignored in inbounds mode.
+             */
+            pool_id?: string;
             /**
              * @description Port is the first port to assign; each further inbound takes the next
              *     one. Zero picks a free port per inbound (probed by opening and closing
@@ -2869,6 +3010,11 @@ export type components = {
              *     means "socks5".
              */
             protocol?: string;
+            /**
+             * @description Selector is the generated pool's selection strategy in pool mode; nil
+             *     means roundrobin. Ignored in inbounds mode.
+             */
+            selector?: components["schemas"]["core.FullProbeSelectorSpec"];
         };
         "core.FullProbeFailedItem": {
             /** @description Address is the outbound's server address, when it has one. */
@@ -2892,6 +3038,14 @@ export type components = {
             id?: string;
             /** @description Levels are the completed and in-flight levels, depth ascending. */
             levels?: components["schemas"]["core.FullProbeLevel"][];
+            /**
+             * @description RowsPruned reports that the job's durable attempt-result rows
+             *     (GET /api/probes/full/{id}/results) were pruned — the per-job or global
+             *     retention budget cut them, or the job's result bucket was evicted
+             *     wholesale. The attempt counts above stay exact; only the row detail
+             *     is partial.
+             */
+            rows_pruned?: boolean;
             spec?: components["schemas"]["core.FullProbeSpec"];
             startedAt?: string;
             state?: string;
@@ -2943,6 +3097,14 @@ export type components = {
             latency?: components["schemas"]["time.Duration"];
             /** @description Status is the HTTP response status the attempt received. */
             status?: number;
+        };
+        "core.FullProbeSelectorSpec": {
+            /** @description Params is strategy-specific config, e.g. sticky: {"key":"domain"}. */
+            params?: {
+                [key: string]: unknown;
+            };
+            /** @description Type is "random", "roundrobin", "sticky", "leastlatency". */
+            type?: string;
         };
         "core.FullProbeSpec": {
             /** @description Body is the request body, sent verbatim. */
