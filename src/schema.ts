@@ -1569,6 +1569,351 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/probes/full": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List full active probing jobs
+         * @description Returns up to n full-probe job snapshots, newest first: live jobs with their current per-level progress, plus the durable history of finished jobs. Each level carries its depth, planned/finished/success/failed counts, the successful paths (ordered outbound hop lists with latency and status, fastest first) and the failed items aggregated by last-hop outbound.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Number of jobs to return (default 20, max 64) */
+                    n?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["core.FullProbeJob"][];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Method Not Allowed */
+                405: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Start a full active probing job
+         * @description Launches a multi-level sweep that discovers which proxy paths reach the target: level 1 probes local → every outbound (successes A, failures B); level 2 probes local → a → b for every a ∈ A, b ∈ B (successes C, failures D); level 3 extends the surviving paths with the new failures, and so on up to max_depth (5). Every attempt is a real HTTP request through the pinned path, so a success proves the whole chain proxies. The job runs detached; poll GET /api/probes/full/{id} for per-level progress and success paths, then POST /api/probes/full/{id}/inbounds to turn them into chains + inbounds. rps caps the probe request rate (up to 10000); concurrency, max_attempts_per_level, max_paths_per_level (the beam of fastest paths kept per level) and max_total_attempts bound the fan-out.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description The sweep to run */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["api.fullProbeRunRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["core.FullProbeJob"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Method Not Allowed */
+                405: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Service Unavailable */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/probes/full/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Cancel a full active probing job
+         * @description Returns one job's current snapshot: spec, state (running/done/canceled/error), per-level progress and results, and the total attempt count. While the job runs the snapshot is live; after it finishes the durable history serves it.
+         *     Stops a running job's issuance; in-flight attempts finish under their own timeouts and the job lands in state "canceled" with the levels it completed. A job that already finished answers 409.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Job id */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["core.FullProbeJob"];
+                    };
+                };
+                /** @description No content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        /**
+         * Cancel a full active probing job
+         * @description Returns one job's current snapshot: spec, state (running/done/canceled/error), per-level progress and results, and the total attempt count. While the job runs the snapshot is live; after it finishes the durable history serves it.
+         *     Stops a running job's issuance; in-flight attempts finish under their own timeouts and the job lands in state "canceled" with the levels it completed. A job that already finished answers 409.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Job id */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["core.FullProbeJob"];
+                    };
+                };
+                /** @description No content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/probes/full/{id}/inbounds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create inbounds from a job's successful paths
+         * @description Turns the job's successful paths into chains + inbounds in the live config: one chain per path (its hops as pinned outbound layers) and one inbound listener routed through it. With no body (or no paths given) the fastest successful path per depth is applied — local→A, local→A→C, local→A→C→E, ...; naming paths explicitly applies exactly those (each must be one of the job's successful paths). protocol defaults to socks5, listen_prefix to 127.0.0.1; port names the first port (each further inbound takes the next), and port 0 picks a free port per inbound. Changes apply live: the engine starts the listeners on the next config version bump.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Job id */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            /** @description Which paths to apply and how to name/listen the generated inbounds */
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["core.FullProbeApplySpec"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.fullProbeApplyResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api.errResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/probes/results": {
         parameters: {
             query?: never;
@@ -2121,6 +2466,41 @@ export type components = {
              */
             status?: string;
         };
+        "api.fullProbeApplyResponse": {
+            /** @description JobID is the job the paths came from. */
+            job_id?: string;
+            /** @description Results are the generated chain + inbound pairs, one per applied path. */
+            results?: components["schemas"]["core.FullProbeApplyResult"][];
+        };
+        "api.fullProbeRunRequest": {
+            /** @description Body is the request body, sent verbatim. */
+            body?: string;
+            /** @description Concurrency caps in-flight attempts. Default 2×RPS (min 16, max 16384). */
+            concurrency?: number;
+            /** @description Headers are added to every request. */
+            headers?: {
+                [key: string]: string;
+            };
+            /** @description MaxAttemptsPerLevel caps one level's fan-out. Default 10000. */
+            max_attempts_per_level?: number;
+            /** @description MaxDepth is the deepest chain length to explore (1..5). Default 5. */
+            max_depth?: number;
+            /**
+             * @description MaxPathsPerLevel caps the successful paths kept as next-level prefixes
+             *     (fastest first). Default 256.
+             */
+            max_paths_per_level?: number;
+            /** @description MaxTotalAttempts caps the whole job. Default 100000. */
+            max_total_attempts?: number;
+            /** @description Method is the HTTP method; empty means GET. */
+            method?: string;
+            /** @description RPS is the probe request rate limit (1..10000). Default 100. */
+            rps?: number;
+            /** @description Target is the absolute http(s) URL every attempt requests. Required. */
+            target?: string;
+            /** @description TimeoutSec bounds one attempt. Default 10; must be 0..60 (0 = default). */
+            timeout_seconds?: number;
+        };
         "api.probeRunAccepted": {
             /** @description Message points the caller at the results view. */
             message?: string;
@@ -2446,10 +2826,167 @@ export type components = {
             startedAt?: string;
             success?: boolean;
         };
+        "core.FullProbeApplyResult": {
+            chain_id?: string;
+            inbound_id?: string;
+            listen?: string;
+            path?: components["schemas"]["core.FullProbePath"];
+            protocol?: string;
+        };
+        "core.FullProbeApplySpec": {
+            /**
+             * @description IDPrefix names the generated chains and inbounds
+             *     ("<prefix>-d<depth>-<n>"); empty means "fullprobe-<jobID>".
+             */
+            id_prefix?: string;
+            /**
+             * @description ListenPrefix is the host every generated inbound listens on; empty
+             *     means 127.0.0.1.
+             */
+            listen_prefix?: string;
+            /**
+             * @description Paths are the exact hop lists to build, each an ordered list of
+             *     outbound IDs. Empty means BestPaths().
+             */
+            paths?: string[][];
+            /**
+             * @description Port is the first port to assign; each further inbound takes the next
+             *     one. Zero picks a free port per inbound (probed by opening and closing
+             *     a socket, so the generated config names a concrete port).
+             */
+            port?: number;
+            /**
+             * @description Protocol is the inbound listener protocol ("http" or "socks5"); empty
+             *     means "socks5".
+             */
+            protocol?: string;
+        };
+        "core.FullProbeFailedItem": {
+            /** @description Address is the outbound's server address, when it has one. */
+            address?: string;
+            /** @description Count is how many attempts ending in this outbound failed. */
+            count?: number;
+            /** @description Error is the most recent failure's error string (a sample, not all). */
+            error?: string;
+            /** @description ID is the outbound that failed as the level's last hop. */
+            id?: string;
+            /** @description Reason is the most recent failure's classified reason slug. */
+            reason?: string;
+        };
+        "core.FullProbeJob": {
+            /**
+             * @description Error is why the job ended in state "error" (a spec that cannot run,
+             *     no outbounds to probe); empty otherwise.
+             */
+            error?: string;
+            finishedAt?: string;
+            id?: string;
+            /** @description Levels are the completed and in-flight levels, depth ascending. */
+            levels?: components["schemas"]["core.FullProbeLevel"][];
+            spec?: components["schemas"]["core.FullProbeSpec"];
+            startedAt?: string;
+            state?: string;
+            /** @description TotalAttempts is how many attempts have finished across all levels. */
+            total_attempts?: number;
+        };
+        "core.FullProbeLevel": {
+            /** @description Candidates is how many distinct outbounds were tried as the last hop. */
+            candidates?: number;
+            /** @description Depth is the chain length this level probed (1 = local → outbound). */
+            depth?: number;
+            /** @description Done is how many attempts finished (success or failure). */
+            done?: number;
+            failed?: number;
+            /**
+             * @description FailedItems aggregates the failures by last-hop outbound, sorted by
+             *     ID. These are the next level's candidates.
+             */
+            failed_items?: components["schemas"]["core.FullProbeFailedItem"][];
+            finishedAt?: string;
+            /**
+             * @description Prefixes is how many successful paths from the previous level were
+             *     extended (1 at depth 1: the empty local prefix).
+             */
+            prefixes?: number;
+            skipped?: number;
+            startedAt?: string;
+            /** @description Success / Failed partition Done. */
+            success?: number;
+            /**
+             * @description SuccessPaths are the level's successful paths, fastest first, capped
+             *     at the spec's MaxPathsPerLevel. These are the next level's prefixes
+             *     and what inbound creation builds from.
+             */
+            success_paths?: components["schemas"]["core.FullProbePath"][];
+            /**
+             * @description Total is the planned attempt count after the fan-out caps; Skipped
+             *     counts the pairs the caps (or a cancel) cut.
+             */
+            total?: number;
+        };
+        "core.FullProbePath": {
+            /**
+             * @description Hops are the outbound IDs in dial order; the engine host ("local") is
+             *     the implicit first node and the target the implicit last.
+             */
+            hops?: string[];
+            /** @description Latency is the successful attempt's whole-request span. */
+            latency?: components["schemas"]["time.Duration"];
+            /** @description Status is the HTTP response status the attempt received. */
+            status?: number;
+        };
+        "core.FullProbeSpec": {
+            /** @description Body is the request body, sent verbatim. */
+            body?: string;
+            /**
+             * @description Concurrency caps in-flight attempts. Zero derives it from RPS
+             *     (2×RPS, clamped to 16..FullProbeMaxConcurrency).
+             */
+            concurrency?: number;
+            /** @description Headers are added to every request. */
+            headers?: {
+                [key: string]: string;
+            };
+            /**
+             * @description MaxAttemptsPerLevel caps one level's fan-out. Zero uses
+             *     DefaultFullProbeAttemptsPerLevel.
+             */
+            max_attempts_per_level?: number;
+            /**
+             * @description MaxDepth is the deepest chain length to explore (1..FullProbeMaxDepth).
+             *     Zero uses DefaultFullProbeDepth.
+             */
+            max_depth?: number;
+            /**
+             * @description MaxPathsPerLevel caps the successful paths kept as next-level prefixes
+             *     (fastest first). Zero uses DefaultFullProbePathsPerLevel.
+             */
+            max_paths_per_level?: number;
+            /**
+             * @description MaxTotalAttempts caps the whole job. Zero uses
+             *     DefaultFullProbeTotalAttempts.
+             */
+            max_total_attempts?: number;
+            /** @description Method is the HTTP method; empty means GET. */
+            method?: string;
+            /**
+             * @description RPS is the probe request rate limit (1..FullProbeMaxRPS). Zero uses
+             *     DefaultFullProbeRPS.
+             */
+            rps?: number;
+            /** @description Target is the absolute http(s) URL every attempt requests. Required. */
+            target?: string;
+            /**
+             * @description Timeout bounds one attempt. Zero uses DefaultFullProbeTimeout; capped
+             *     at FullProbeMaxTimeout.
+             */
+            timeout?: components["schemas"]["time.Duration"];
+        };
         "core.HTTPProbe": {
             /** @description Body is the response body, capped at the probe's MaxBodyBytes. */
             body?: string;
             connect?: components["schemas"]["time.Duration"];
+            depth?: number;
             /**
              * @description DialAddr is the address the first hop actually connected to — the
              *     proxy server for a proxy route, the target itself for a direct one.
@@ -2468,6 +3005,14 @@ export type components = {
             dialVia?: string;
             dns?: components["schemas"]["time.Duration"];
             error?: string;
+            /**
+             * @description FullProbeID links this record to the full active probing job that ran
+             *     it (GET /api/probes/full/{id}); Depth is the chain length the attempt
+             *     probed (1 = local → one outbound). Both are zero/empty on records from
+             *     a plain probe round (RunHTTPProbes), which has no job and probes routes
+             *     rather than pinned depths.
+             */
+            full_probe_id?: string;
             /**
              * @description Headers are the response headers, one value per name; a repeated
              *     header's values are joined with ", ".
