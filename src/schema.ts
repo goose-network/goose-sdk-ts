@@ -1624,7 +1624,7 @@ export type paths = {
         put?: never;
         /**
          * Start a full active probing job
-         * @description Launches a multi-level sweep that discovers which proxy paths reach the target: level 1 probes local → every outbound (successes A, failures B); level 2 probes local → a → b for every a ∈ A, b ∈ B (successes C, failures D); level 3 extends the surviving paths with the new failures, and so on up to max_depth (5). Every attempt is a real HTTP request through the pinned path, so a success proves the whole chain proxies. The job runs detached; poll GET /api/probes/full/{id} for per-level progress and success paths, then POST /api/probes/full/{id}/inbounds to turn them into chains + inbounds. rps caps the probe request rate (up to 10000); concurrency, max_attempts_per_level, max_paths_per_level (the beam of fastest paths kept per level) and max_total_attempts bound the fan-out. At most two sweeps run at once; a start beyond that answers 409 until one finishes.
+         * @description Launches a multi-level sweep that discovers which proxy paths reach the target: level 1 probes local → every outbound (successes A, failures B); level 2 probes local → a → b for every a ∈ A, b ∈ B (successes C, failures D); level 3 extends the surviving paths with the new failures, and so on up to max_depth (5). Every attempt is a real HTTP request through the pinned path, so a success proves the whole chain proxies. Provider fleets keep growing for minutes after a start (server lists download in bursts), so after the sweep a bounded settling tail keeps probing outbounds registered late at depth 1 — folding them into level 1 — until the fleet has been quiet for a while or catchup_seconds expires (default 600, max 900; -1 disables the tail, one final top-up pass still runs; engines without providers take only that final pass). Late arrivals are measured at depth 1 only. The job runs detached; poll GET /api/probes/full/{id} for per-level progress and success paths, then POST /api/probes/full/{id}/inbounds to turn them into chains + inbounds. rps caps the probe request rate (up to 10000); concurrency, max_attempts_per_level, max_paths_per_level (the beam of fastest paths kept per level) and max_total_attempts bound the fan-out. At most two sweeps run at once; a start beyond that answers 409 until one finishes.
          */
         post: {
             parameters: {
@@ -2605,6 +2605,13 @@ export type components = {
         "api.fullProbeRunRequest": {
             /** @description Body is the request body, sent verbatim. */
             body?: string;
+            /**
+             * @description CatchupSeconds bounds the post-sweep settling tail that probes
+             *     outbounds registered after the job started (provider fleets grow for
+             *     minutes) at depth 1, folding them into level 1. Default 600; must be
+             *     -1..900 (-1 disables the tail; one final top-up pass still runs).
+             */
+            catchup_seconds?: number;
             /** @description Concurrency caps in-flight attempts. Default 2×RPS (min 16, max 16384). */
             concurrency?: number;
             /** @description Headers are added to every request. */
@@ -3053,7 +3060,12 @@ export type components = {
             total_attempts?: number;
         };
         "core.FullProbeLevel": {
-            /** @description Candidates is how many distinct outbounds were tried as the last hop. */
+            /**
+             * @description Candidates is how many distinct last-hop outbounds were observed —
+             *     offered to the sweep, whether probed or honestly skipped. The settling
+             *     tail's deadline cut accounts for never-probed outbounds here too, so
+             *     Candidates covers the whole observed fleet even on a partial sweep.
+             */
             candidates?: number;
             /** @description Depth is the chain length this level probed (1 = local → outbound). */
             depth?: number;
@@ -3083,7 +3095,9 @@ export type components = {
             success_paths?: components["schemas"]["core.FullProbePath"][];
             /**
              * @description Total is the planned attempt count after the fan-out caps; Skipped
-             *     counts the pairs the caps (or a cancel) cut.
+             *     counts the prefix×candidate pairs cut without an attempt — by the
+             *     fan-out caps, a cancel, or the settling tail's expired bound (depth 1
+             *     pairs are single outbounds).
              */
             total?: number;
         };
@@ -3109,6 +3123,18 @@ export type components = {
         "core.FullProbeSpec": {
             /** @description Body is the request body, sent verbatim. */
             body?: string;
+            /**
+             * @description CatchupSeconds bounds the post-sweep settling tail: while a provider
+             *     fleet keeps growing, the job keeps probing newly registered outbounds at
+             *     depth 1 (folding them into level 1) until the fleet has been quiet for a
+             *     while or the bound expires. Zero uses DefaultFullProbeCatchupSeconds;
+             *     negative disables the tail (one final top-up pass still runs) and
+             *     normalizes to -1 so the stored spec is a fixed point — re-normalizing it
+             *     must not turn the opt-out back into the default. Capped at
+             *     FullProbeMaxCatchupSeconds. Engines without providers skip the tail and
+             *     take only the final pass. Late arrivals are measured at depth 1 only.
+             */
+            catchup_seconds?: number;
             /**
              * @description Concurrency caps in-flight attempts. Zero derives it from RPS
              *     (2×RPS, clamped to 16..FullProbeMaxConcurrency).
